@@ -4,6 +4,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import CaseDetail from "./pages/CaseDetail";
+import SarFiling from "./pages/SarFiling";
 
 export default function App() {
   return (
@@ -25,6 +26,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <CaseDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cases/:caseCode/sar"
+            element={
+              <ProtectedRoute>
+                <SarFiling />
               </ProtectedRoute>
             }
           />

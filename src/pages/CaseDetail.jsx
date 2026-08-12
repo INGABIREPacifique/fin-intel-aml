@@ -73,10 +73,15 @@ export default function CaseDetail() {
               </p>
             </div>
           </div>
-          <p className="font-body-md text-body-md text-on-surface-variant">
-            This is prototype #1 — next build phase adds the full forensic network graph, evidence log,
-            and SAR draft generation for this case.
+          <p className="font-body-md text-body-md text-on-surface-variant mb-6">
+            Next build phase adds the full forensic network graph and evidence log for this case.
           </p>
+          <button
+            onClick={() => navigate(`/cases/${alert.case_code}/sar`)}
+            className="px-6 py-3 rounded font-label-caps text-label-caps bg-status-success text-on-primary-fixed font-bold hover:opacity-90 transition-opacity"
+          >
+            Draft SAR for this Case
+          </button>
         </div>
       )}
     </div>
