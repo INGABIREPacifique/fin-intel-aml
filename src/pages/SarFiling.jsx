@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import { useAuth } from "../lib/AuthContext";
 
 export default function SarFiling() {
   const { caseCode } = useParams();
   const navigate = useNavigate();
+  const { profile, session } = useAuth();
+  const canApprove = profile?.role === "compliance_officer" || profile?.role === "admin";
 
   const [caseRecord, setCaseRecord] = useState(null);
   const [sar, setSar] = useState(null);
@@ -76,23 +79,54 @@ export default function SarFiling() {
     } else {
       setSar(result.data);
       setMessage("Draft saved.");
+      await supabase.from("audit_logs").insert({
+        actor_id: session.user.id,
+        action: "sar_draft_saved",
+        target_type: "sar_filing",
+        target_id: result.data.id,
+        details: { case_code: caseCode },
+      });
     }
   };
 
   const handleDecision = async (newStatus) => {
     if (!sar) return;
+    if (!canApprove) {
+      setMessage("Only a Compliance Officer can approve or reject a SAR.");
+      return;
+    }
     setSaving(true);
     const { data, error } = await supabase
       .from("sar_filings")
-      .update({ status: newStatus })
+      .update({ status: newStatus, reviewed_by: session.user.id })
       .eq("id", sar.id)
       .select()
       .single();
-    setSaving(false);
+
     if (!error) {
       setSar(data);
-      setMessage(newStatus === "filed" ? "SAR approved and filed." : "SAR rejected — returned for revision.");
+      await supabase.from("audit_logs").insert({
+        actor_id: session.user.id,
+        action: newStatus === "filed" ? "sar_approved" : "sar_rejected",
+        target_type: "sar_filing",
+        target_id: sar.id,
+        details: { case_code: caseCode },
+      });
+
+      if (newStatus === "filed") {
+        await supabase.from("cases").update({ status: "resolved" }).eq("id", caseRecord.id);
+        await supabase.from("audit_logs").insert({
+          actor_id: session.user.id,
+          action: "case_resolved",
+          target_type: "case",
+          target_id: caseRecord.id,
+          details: { case_code: caseCode, reason: "sar_filed" },
+        });
+      }
+
+      setMessage(newStatus === "filed" ? "SAR approved and filed. Case marked resolved." : "SAR rejected — returned for revision.");
     }
+    setSaving(false);
   };
 
   if (loading) {
@@ -208,7 +242,7 @@ export default function SarFiling() {
             >
               {saving ? "SAVING..." : "Save Draft"}
             </button>
-            {sar && sar.status === "pending_review" && (
+            {sar && sar.status === "pending_review" && canApprove && (
               <>
                 <button
                   onClick={() => handleDecision("rejected")}
@@ -225,6 +259,11 @@ export default function SarFiling() {
                   Approve &amp; File to FinCEN
                 </button>
               </>
+            )}
+            {sar && sar.status === "pending_review" && !canApprove && (
+              <p className="font-data-tabular text-data-tabular text-on-surface-variant self-center">
+                Awaiting Compliance Officer review — you do not have approval permissions.
+              </p>
             )}
           </div>
         </div>

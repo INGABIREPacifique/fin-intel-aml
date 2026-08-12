@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../lib/AuthContext";
 
 export default function Dashboard() {
-  const { signOut } = useAuth();
+  const { signOut, profile } = useAuth();
   const navigate = useNavigate();
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,9 +35,14 @@ export default function Dashboard() {
           <h1 className="font-headline-md text-headline-md font-bold text-on-surface mb-1">
             AML <span className="text-secondary">Division</span>
           </h1>
-          <p className="font-label-caps text-label-caps text-on-surface-variant uppercase mb-8">
+          <p className="font-label-caps text-label-caps text-on-surface-variant uppercase mb-1">
             Institutional Vault
           </p>
+          {profile && (
+            <p className="font-data-tabular text-data-tabular text-secondary mb-8">
+              {profile.full_name} · {profile.role.replace("_", " ").toUpperCase()}
+            </p>
+          )}
           <nav className="space-y-1">
             <div className="flex items-center gap-3 px-3 py-2 bg-surface-container-high text-secondary rounded">
               <span className="material-symbols-outlined text-[20px]">grid_view</span>
