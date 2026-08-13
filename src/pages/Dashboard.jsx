@@ -4,20 +4,95 @@ import { supabase } from "../lib/supabaseClient";
 import Sidebar from "../components/Sidebar";
 import TopNavBar from "../components/TopNavBar";
 
+function PatternTrendChart({ trends }) {
+  const width = 600;
+  const height = 160;
+  const padding = 20;
+  const maxVal = Math.max(...trends.flatMap((t) => [t.structuring, t.circular_flow, t.pass_through]), 1);
+
+  const toPoints = (key) =>
+    trends
+      .map((t, i) => {
+        const x = padding + (i / (trends.length - 1)) * (width - padding * 2);
+        const y = height - padding - (t[key] / maxVal) * (height - padding * 2);
+        return `${x},${y}`;
+      })
+      .join(" ");
+
+  const series = [
+    { key: "structuring", color: "#ef4444", label: "Structuring" },
+    { key: "circular_flow", color: "#f59e0b", label: "Circular" },
+    { key: "pass_through", color: "#38bdf8", label: "Pass-Through" },
+  ];
+
+  return (
+    <div>
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-[160px]">
+        {[0.25, 0.5, 0.75].map((f) => (
+          <line
+            key={f}
+            x1={padding}
+            x2={width - padding}
+            y1={padding + f * (height - padding * 2)}
+            y2={padding + f * (height - padding * 2)}
+            stroke="#2a3548"
+            strokeDasharray="4 4"
+          />
+        ))}
+        {series.map((s) => (
+          <polyline
+            key={s.key}
+            points={toPoints(s.key)}
+            fill="none"
+            stroke={s.color}
+            strokeWidth="2"
+          />
+        ))}
+      </svg>
+      <div className="flex justify-between mt-2">
+        {trends.map((t) => (
+          <span key={t.week_label} className="font-data-tabular text-data-tabular text-on-surface-variant text-[10px]">
+            {t.week_label}
+          </span>
+        ))}
+      </div>
+      <div className="flex gap-4 mt-3">
+        {series.map((s) => (
+          <div key={s.key} className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
+            <span className="font-data-tabular text-data-tabular text-on-surface text-[10px]">{s.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [alerts, setAlerts] = useState([]);
   const [resolvedCount, setResolvedCount] = useState(0);
+  const [demoMetric, setDemoMetric] = useState(null);
+  const [demoTrends, setDemoTrends] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
-      const [{ data: alertData, error: alertErr }, { count: resolvedCountResult }] = await Promise.all([
+      const [
+        { data: alertData, error: alertErr },
+        { count: resolvedCountResult },
+        { data: metricData },
+        { data: trendData },
+      ] = await Promise.all([
         supabase.from("alerts").select("*, entities(entity_name)").order("risk_score", { ascending: false }),
         supabase.from("cases").select("*", { count: "exact", head: true }).eq("status", "resolved"),
+        supabase.from("demo_metrics").select("*").eq("key", "false_positive_rate").maybeSingle(),
+        supabase.from("demo_pattern_trends").select("*").order("week_order", { ascending: true }),
       ]);
       if (!alertErr) setAlerts(alertData);
       setResolvedCount(resolvedCountResult ?? 0);
+      setDemoMetric(metricData);
+      setDemoTrends(trendData ?? []);
       setLoading(false);
     }
     loadData();
@@ -84,16 +159,24 @@ export default function Dashboard() {
               {loading ? "…" : highRiskCount}
             </p>
           </div>
-          <div className="bg-surface-container border border-surface-border p-4 rounded">
+          <div className="bg-surface-container border border-surface-border p-4 rounded relative">
+            <span className="absolute top-2 right-2 font-data-tabular text-data-tabular text-[9px] text-on-surface-variant border border-surface-border rounded px-1.5 py-0.5">
+              DEMO
+            </span>
             <div className="flex items-start justify-between mb-3">
               <p className="font-label-caps text-label-caps text-on-surface-variant uppercase">
-                Resolved Cases
+                False Positive Rate
               </p>
-              <span className="material-symbols-outlined text-status-success text-[18px]">task_alt</span>
+              <span className="material-symbols-outlined text-on-surface-variant text-[18px]">query_stats</span>
             </div>
             <p className="font-headline-lg text-headline-lg text-on-surface">
-              {loading ? "…" : resolvedCount}
+              {loading || !demoMetric ? "…" : `${demoMetric.value}%`}
             </p>
+            {demoMetric?.trend_note && (
+              <p className="font-data-tabular text-data-tabular text-status-success mt-1">
+                {demoMetric.trend_note}
+              </p>
+            )}
           </div>
         </div>
 
@@ -126,11 +209,17 @@ export default function Dashboard() {
               ))}
             </div>
           </div>
-          <div className="bg-surface-container border border-surface-border rounded p-5 md:col-span-2 flex flex-col items-center justify-center">
-            <p className="font-data-tabular text-data-tabular text-on-surface-variant text-center">
-              Laundering Pattern Detection (Structuring / Circular Flow / Rapid Pass-Through trend lines) —
-              not yet built. Needs historical time-series data, which isn't tracked yet.
+          <div className="bg-surface-container border border-surface-border rounded p-5 md:col-span-2 relative">
+            <span className="absolute top-5 right-5 font-data-tabular text-data-tabular text-[9px] text-on-surface-variant border border-surface-border rounded px-1.5 py-0.5">
+              DEMO DATA
+            </span>
+            <h3 className="font-headline-sm text-headline-sm text-on-surface mb-1">Laundering Pattern Detection</h3>
+            <p className="font-data-tabular text-data-tabular text-on-surface-variant mb-4">
+              Structuring, Circular Flows, and Rapid Pass-Through trends
             </p>
+            {demoTrends.length > 0 && (
+              <PatternTrendChart trends={demoTrends} />
+            )}
           </div>
         </div>
 
