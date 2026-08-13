@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
-import { useAuth } from "../lib/AuthContext";
+import Sidebar from "../components/Sidebar";
 
 export default function Dashboard() {
-  const { signOut, profile } = useAuth();
   const navigate = useNavigate();
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,45 +22,9 @@ export default function Dashboard() {
 
   const highRiskCount = alerts.filter((a) => a.risk_score >= 90).length;
 
-  const handleLogout = async () => {
-    await signOut();
-    navigate("/login");
-  };
-
   return (
     <div className="min-h-screen bg-background text-on-surface flex">
-      <aside className="w-[240px] bg-surface-container-low border-r border-surface-border p-6 flex flex-col justify-between">
-        <div>
-          <h1 className="font-headline-md text-headline-md font-bold text-on-surface mb-1">
-            AML <span className="text-secondary">Division</span>
-          </h1>
-          <p className="font-label-caps text-label-caps text-on-surface-variant uppercase mb-1">
-            Institutional Vault
-          </p>
-          {profile && (
-            <p className="font-data-tabular text-data-tabular text-secondary mb-8">
-              {profile.full_name} · {profile.role.replace("_", " ").toUpperCase()}
-            </p>
-          )}
-          <nav className="space-y-1">
-            <div className="flex items-center gap-3 px-3 py-2 bg-surface-container-high text-secondary rounded">
-              <span className="material-symbols-outlined text-[20px]">grid_view</span>
-              <span className="font-body-md text-body-md">Overview</span>
-            </div>
-            <div className="flex items-center gap-3 px-3 py-2 text-on-surface-variant rounded">
-              <span className="material-symbols-outlined text-[20px]">list_alt</span>
-              <span className="font-body-md text-body-md">Alert Queue</span>
-            </div>
-          </nav>
-        </div>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-status-critical transition-colors rounded"
-        >
-          <span className="material-symbols-outlined text-[20px]">logout</span>
-          <span className="font-body-md text-body-md">Logout</span>
-        </button>
-      </aside>
+      <Sidebar />
 
       <main className="flex-1 p-8">
         <h2 className="font-headline-lg text-headline-lg text-on-surface mb-2">Institutional Vault</h2>

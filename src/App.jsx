@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import CaseDetail from "./pages/CaseDetail";
 import SarFiling from "./pages/SarFiling";
+import AlertQueue from "./pages/AlertQueue";
 
 export default function App() {
   return (
@@ -18,6 +19,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/alerts"
+            element={
+              <ProtectedRoute>
+                <AlertQueue />
               </ProtectedRoute>
             }
           />

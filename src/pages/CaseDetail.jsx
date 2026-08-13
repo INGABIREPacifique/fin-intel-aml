@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import Sidebar from "../components/Sidebar";
 
 export default function CaseDetail() {
   const { caseCode } = useParams();
@@ -22,7 +23,9 @@ export default function CaseDetail() {
   }, [caseCode]);
 
   return (
-    <div className="min-h-screen bg-background text-on-surface p-8">
+    <div className="min-h-screen bg-background text-on-surface flex">
+      <Sidebar />
+      <main className="flex-1 p-8">
       <button
         onClick={() => navigate("/dashboard")}
         className="flex items-center gap-2 text-on-surface-variant hover:text-on-surface mb-6 font-body-md text-body-md"
@@ -84,6 +87,7 @@ export default function CaseDetail() {
           </button>
         </div>
       )}
+      </main>
     </div>
   );
 }
