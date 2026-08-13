@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import Sidebar from "../components/Sidebar";
+import TopNavBar from "../components/TopNavBar";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -26,7 +27,9 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background text-on-surface flex">
       <Sidebar />
 
-      <main className="flex-1 p-8">
+      <div className="flex-1 flex flex-col">
+        <TopNavBar />
+        <main className="flex-1 p-8">
         <h2 className="font-headline-lg text-headline-lg text-on-surface mb-2">Institutional Vault</h2>
         <p className="font-body-md text-body-md text-on-surface-variant mb-8">
           Executive Overview &amp; Risk Anomaly Detection
@@ -101,6 +104,7 @@ export default function Dashboard() {
           ))}
         </div>
       </main>
+      </div>
     </div>
   );
 }

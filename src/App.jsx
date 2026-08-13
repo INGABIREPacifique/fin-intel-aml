@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import CaseDetail from "./pages/CaseDetail";
 import SarFiling from "./pages/SarFiling";
 import AlertQueue from "./pages/AlertQueue";
+import ComingSoon from "./pages/ComingSoon";
 
 export default function App() {
   return (
@@ -27,6 +28,30 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <AlertQueue />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/investigations"
+            element={
+              <ProtectedRoute>
+                <ComingSoon title="Investigations" />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/network-graph"
+            element={
+              <ProtectedRoute>
+                <ComingSoon title="Network Graph" />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/data-health"
+            element={
+              <ProtectedRoute>
+                <ComingSoon title="Data Health" />
               </ProtectedRoute>
             }
           />

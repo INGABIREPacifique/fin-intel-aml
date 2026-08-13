@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../lib/AuthContext";
+import Sidebar from "../components/Sidebar";
+import TopNavBar from "../components/TopNavBar";
 
 export default function SarFiling() {
   const { caseCode } = useParams();
@@ -146,7 +148,11 @@ export default function SarFiling() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-on-surface p-8">
+    <div className="min-h-screen bg-background text-on-surface flex">
+      <Sidebar />
+      <div className="flex-1 flex flex-col">
+        <TopNavBar />
+        <main className="flex-1 p-8">
       <button
         onClick={() => navigate(`/cases/${caseCode}`)}
         className="flex items-center gap-2 text-on-surface-variant hover:text-on-surface mb-6 font-body-md text-body-md"
@@ -267,6 +273,8 @@ export default function SarFiling() {
             )}
           </div>
         </div>
+        </div>
+        </main>
       </div>
     </div>
   );

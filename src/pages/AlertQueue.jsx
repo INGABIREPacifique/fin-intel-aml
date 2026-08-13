@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import Sidebar from "../components/Sidebar";
+import TopNavBar from "../components/TopNavBar";
 
 export default function AlertQueue() {
   const navigate = useNavigate();
@@ -35,7 +36,9 @@ export default function AlertQueue() {
   return (
     <div className="min-h-screen bg-background text-on-surface flex">
       <Sidebar />
-      <main className="flex-1 p-8">
+      <div className="flex-1 flex flex-col">
+        <TopNavBar />
+        <main className="flex-1 p-8">
       <div className="flex items-center justify-between mb-2">
         <h1 className="font-headline-lg text-headline-lg text-on-surface">Alert Queue</h1>
       </div>
@@ -109,6 +112,7 @@ export default function AlertQueue() {
         ))}
       </div>
       </main>
+      </div>
     </div>
   );
 }
