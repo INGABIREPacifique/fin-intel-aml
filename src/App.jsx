@@ -10,6 +10,7 @@ import ComingSoon from "./pages/ComingSoon";
 import InstitutionsList from "./pages/InstitutionsList";
 import InstitutionProfile from "./pages/InstitutionProfile";
 import GlobalAuditTrail from "./pages/GlobalAuditTrail";
+import RiskEngineConfig from "./pages/RiskEngineConfig";
 import Investigations from "./pages/Investigations";
 
 const ALL_ROLES = ["investigator", "compliance_officer", "admin"];
@@ -94,7 +95,7 @@ export default function App() {
             path="/risk-engine"
             element={
               <ProtectedRoute allowedRoles={ADMIN_ONLY}>
-                <ComingSoon title="Risk Engine Configuration" />
+                <RiskEngineConfig />
               </ProtectedRoute>
             }
           />
