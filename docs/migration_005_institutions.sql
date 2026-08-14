@@ -39,11 +39,11 @@ values ('GBL-889-UK', 'Global Bank PLC', 'UK - FCA', 'active', '2023-10-12', 98.
 on conflict (institution_code) do nothing;
 
 insert into institution_legal_agreements (institution_id, title, reference, status, expires_on)
-select id, 'Data Sharing Agreement v3', 'DSA-UK-2023', 'active', '2024-12-31' from institutions where institution_code = 'GBL-889-UK'
+select id, 'Data Sharing Agreement v3', 'DSA-UK-2023', 'active', '2024-12-31'::date from institutions where institution_code = 'GBL-889-UK'
 union all
-select id, 'Privacy Impact Assessment', 'PIA-2023-Q4', 'active', '2025-10-01' from institutions where institution_code = 'GBL-889-UK'
+select id, 'Privacy Impact Assessment', 'PIA-2023-Q4', 'active', '2025-10-01'::date from institutions where institution_code = 'GBL-889-UK'
 union all
-select id, 'Cross-Border MoU', 'MOU-EU-2021', 'expired', '2023-01-15' from institutions where institution_code = 'GBL-889-UK'
+select id, 'Cross-Border MoU', 'MOU-EU-2021', 'expired', '2023-01-15'::date from institutions where institution_code = 'GBL-889-UK'
 on conflict do nothing;
 
 -- Seed a few audit_logs entries for this institution, reusing the real audit_logs table
