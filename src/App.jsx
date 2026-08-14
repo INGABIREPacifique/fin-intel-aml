@@ -9,6 +9,7 @@ import AlertQueue from "./pages/AlertQueue";
 import ComingSoon from "./pages/ComingSoon";
 import InstitutionsList from "./pages/InstitutionsList";
 import InstitutionProfile from "./pages/InstitutionProfile";
+import Investigations from "./pages/Investigations";
 
 const ALL_ROLES = ["investigator", "compliance_officer", "admin"];
 const OFFICER_AND_ADMIN = ["compliance_officer", "admin"];
@@ -42,7 +43,7 @@ export default function App() {
             path="/investigations"
             element={
               <ProtectedRoute allowedRoles={ALL_ROLES}>
-                <ComingSoon title="Investigations" />
+                <Investigations />
               </ProtectedRoute>
             }
           />
