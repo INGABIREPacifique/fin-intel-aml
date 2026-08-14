@@ -9,6 +9,7 @@ import AlertQueue from "./pages/AlertQueue";
 import ComingSoon from "./pages/ComingSoon";
 import InstitutionsList from "./pages/InstitutionsList";
 import InstitutionProfile from "./pages/InstitutionProfile";
+import GlobalAuditTrail from "./pages/GlobalAuditTrail";
 import Investigations from "./pages/Investigations";
 
 const ALL_ROLES = ["investigator", "compliance_officer", "admin"];
@@ -77,6 +78,14 @@ export default function App() {
             element={
               <ProtectedRoute allowedRoles={OFFICER_AND_ADMIN}>
                 <ComingSoon title="Data Health" />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/audit-trail"
+            element={
+              <ProtectedRoute allowedRoles={OFFICER_AND_ADMIN}>
+                <GlobalAuditTrail />
               </ProtectedRoute>
             }
           />
