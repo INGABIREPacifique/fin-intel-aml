@@ -45,7 +45,10 @@ export default function Sidebar() {
         </p>
       )}
 
-      <button className="w-full bg-secondary text-on-secondary font-label-caps text-label-caps font-semibold py-3 rounded flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+      <button
+        onClick={() => navigate("/investigations/new")}
+        className="w-full bg-secondary text-on-secondary font-label-caps text-label-caps font-semibold py-3 rounded flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
+      >
         <span className="material-symbols-outlined text-[16px]">add</span>
         NEW INVESTIGATION
       </button>

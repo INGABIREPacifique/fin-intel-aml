@@ -11,6 +11,7 @@ import InstitutionsList from "./pages/InstitutionsList";
 import InstitutionProfile from "./pages/InstitutionProfile";
 import GlobalAuditTrail from "./pages/GlobalAuditTrail";
 import RiskEngineConfig from "./pages/RiskEngineConfig";
+import NewInvestigation from "./pages/NewInvestigation";
 import Investigations from "./pages/Investigations";
 
 const ALL_ROLES = ["investigator", "compliance_officer", "admin"];
@@ -46,6 +47,14 @@ export default function App() {
             element={
               <ProtectedRoute allowedRoles={ALL_ROLES}>
                 <Investigations />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/investigations/new"
+            element={
+              <ProtectedRoute allowedRoles={ALL_ROLES}>
+                <NewInvestigation />
               </ProtectedRoute>
             }
           />
