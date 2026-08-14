@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import Sidebar from "../components/Sidebar";
 import TopNavBar from "../components/TopNavBar";
 
 export default function AlertQueue() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [riskFilter, setRiskFilter] = useState("all");
+  const [riskFilter, setRiskFilter] = useState(searchParams.get("risk") ?? "all");
   const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
@@ -26,9 +27,10 @@ export default function AlertQueue() {
   const filtered = alerts.filter((a) => {
     const riskOk =
       riskFilter === "all" ||
-      (riskFilter === "high" && a.risk_score >= 90) ||
-      (riskFilter === "medium" && a.risk_score >= 70 && a.risk_score < 90) ||
-      (riskFilter === "low" && a.risk_score < 70);
+      (riskFilter === "crit" && a.risk_score >= 90) ||
+      (riskFilter === "high" && a.risk_score >= 70 && a.risk_score < 90) ||
+      (riskFilter === "med" && a.risk_score >= 50 && a.risk_score < 70) ||
+      (riskFilter === "low" && a.risk_score < 50);
     const statusOk = statusFilter === "all" || a.status === statusFilter;
     return riskOk && statusOk;
   });
@@ -53,9 +55,10 @@ export default function AlertQueue() {
           className="bg-surface-container border border-surface-border text-on-surface font-label-caps text-label-caps px-4 py-2 rounded focus:outline-none focus:border-data-focus"
         >
           <option value="all">All Risk Levels</option>
-          <option value="high">High (90+)</option>
-          <option value="medium">Medium (70-89)</option>
-          <option value="low">Low (&lt;70)</option>
+          <option value="crit">Critical (90+)</option>
+          <option value="high">High (70-89)</option>
+          <option value="med">Medium (50-69)</option>
+          <option value="low">Low (&lt;50)</option>
         </select>
         <select
           value={statusFilter}

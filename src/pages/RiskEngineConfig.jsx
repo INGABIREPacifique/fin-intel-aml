@@ -15,22 +15,25 @@ export default function RiskEngineConfig() {
   const [models, setModels] = useState([]);
   const [patterns, setPatterns] = useState([]);
   const [logicUpdates, setLogicUpdates] = useState([]);
+  const [demoMetric, setDemoMetric] = useState(null);
   const [loading, setLoading] = useState(true);
   const [strictness, setStrictness] = useState(0);
   const [latestRun, setLatestRun] = useState(null);
   const [running, setRunning] = useState(false);
 
   const load = async () => {
-    const [{ data: modelData }, { data: patternData }, { data: logData }, { data: runData }] = await Promise.all([
+    const [{ data: modelData }, { data: patternData }, { data: logData }, { data: runData }, { data: metricData }] = await Promise.all([
       supabase.from("risk_models").select("*").order("sort_order"),
       supabase.from("market_patterns").select("*").order("sort_order"),
       supabase.from("audit_logs").select("*").eq("target_type", "risk_model").order("created_at", { ascending: false }).limit(5),
       supabase.from("simulation_runs").select("*").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      supabase.from("demo_metrics").select("*").eq("key", "false_positive_rate").maybeSingle(),
     ]);
     setModels(modelData ?? []);
     setPatterns(patternData ?? []);
     setLogicUpdates(logData ?? []);
     setLatestRun(runData ?? null);
+    setDemoMetric(metricData ?? null);
     setLoading(false);
   };
 
@@ -46,6 +49,21 @@ export default function RiskEngineConfig() {
     const newStatus = model.status === "critical" ? "active" : "critical";
     const { data, error } = await supabase.from("risk_models").update({ status: newStatus }).eq("id", model.id).select().single();
     if (!error) setModels((prev) => prev.map((m) => (m.id === data.id ? data : m)));
+  };
+
+  const handleStatusChange = async (model, newStatus) => {
+    const { data, error } = await supabase.from("risk_models").update({ status: newStatus }).eq("id", model.id).select().single();
+    if (!error) {
+      setModels((prev) => prev.map((m) => (m.id === data.id ? data : m)));
+      await supabase.from("audit_logs").insert({
+        actor_id: session.user.id,
+        action: "risk_model_status_changed",
+        target_type: "risk_model",
+        target_id: model.id,
+        target_label: model.name,
+        details: { note: `Status changed from ${model.status} to ${newStatus}` },
+      });
+    }
   };
 
   const handleRunSimulation = async () => {
@@ -108,7 +126,9 @@ export default function RiskEngineConfig() {
                 DEMO
               </span>
               <p className="font-label-caps text-label-caps text-status-critical uppercase mb-2">False Positive Rate</p>
-              <p className="font-headline-lg text-headline-lg text-status-critical">15.8%</p>
+              <p className="font-headline-lg text-headline-lg text-status-critical">
+                {demoMetric ? `${demoMetric.value}%` : "…"}
+              </p>
             </div>
           </div>
 
@@ -170,9 +190,15 @@ export default function RiskEngineConfig() {
                       Emergency Override
                     </button>
                   ) : (
-                    <button className="border border-outline text-on-surface px-4 py-2 rounded font-label-caps text-label-caps">
-                      Configure
-                    </button>
+                    <select
+                      value={m.status}
+                      onChange={(e) => handleStatusChange(m, e.target.value)}
+                      className="border border-outline bg-transparent text-on-surface px-4 py-2 rounded font-label-caps text-label-caps"
+                    >
+                      <option value="active">ACTIVE</option>
+                      <option value="testing">TESTING</option>
+                      <option value="critical">CRITICAL</option>
+                    </select>
                   )}
                 </div>
               </div>

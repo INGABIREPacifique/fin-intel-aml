@@ -190,13 +190,14 @@ export default function Dashboard() {
               {bandCounts.map((b) => (
                 <div key={b.label} className="flex flex-col items-center gap-2">
                   <div
-                    className="w-10 rounded-t"
+                    onClick={() => navigate(`/alerts?risk=${b.label.toLowerCase()}`)}
+                    className="w-10 rounded-t cursor-pointer hover:opacity-100 transition-opacity"
                     style={{
                       height: `${Math.max(4, (b.count / maxBandCount) * 120)}px`,
                       backgroundColor: b.color,
                       opacity: 0.8,
                     }}
-                    title={`${b.count} alerts`}
+                    title={`${b.count} alerts — click to view`}
                   />
                 </div>
               ))}
