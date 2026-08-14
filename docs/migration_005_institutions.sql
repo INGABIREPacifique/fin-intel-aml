@@ -48,14 +48,14 @@ on conflict do nothing;
 
 -- Seed a few audit_logs entries for this institution, reusing the real audit_logs table
 insert into audit_logs (actor_id, action, target_type, target_id, details, created_at)
-select null, 'compliance_review_completed', 'institution', id, '{"note":"Annual FCA Assessment"}'::jsonb, '2023-10-12 14:32:01'
+select null::uuid, 'compliance_review_completed', 'institution', id, '{"note":"Annual FCA Assessment"}'::jsonb, '2023-10-12 14:32:01'::timestamptz
 from institutions where institution_code = 'GBL-889-UK'
 union all
-select null, 'legal_agreement_renewed', 'institution', id, '{"note":"Data Sharing Agreement v3 Renewed"}'::jsonb, '2023-09-28 09:15:44'
+select null::uuid, 'legal_agreement_renewed', 'institution', id, '{"note":"Data Sharing Agreement v3 Renewed"}'::jsonb, '2023-09-28 09:15:44'::timestamptz
 from institutions where institution_code = 'GBL-889-UK'
 union all
-select null, 'data_stream_suspended', 'institution', id, '{"note":"Schema Validation Failure (v2.1)"}'::jsonb, '2023-08-14 18:02:11'
+select null::uuid, 'data_stream_suspended', 'institution', id, '{"note":"Schema Validation Failure (v2.1)"}'::jsonb, '2023-08-14 18:02:11'::timestamptz
 from institutions where institution_code = 'GBL-889-UK'
 union all
-select null, 'data_stream_restored', 'institution', id, '{"note":"Schema Patch Applied"}'::jsonb, '2023-08-15 08:30:00'
+select null::uuid, 'data_stream_restored', 'institution', id, '{"note":"Schema Patch Applied"}'::jsonb, '2023-08-15 08:30:00'::timestamptz
 from institutions where institution_code = 'GBL-889-UK';
