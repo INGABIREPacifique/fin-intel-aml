@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useAuth } from "../lib/AuthContext";
 import Sidebar from "../components/Sidebar";
 import TopNavBar from "../components/TopNavBar";
 
@@ -10,20 +11,26 @@ const statusStyle = {
 };
 
 export default function RiskEngineConfig() {
+  const { session } = useAuth();
   const [models, setModels] = useState([]);
   const [patterns, setPatterns] = useState([]);
   const [logicUpdates, setLogicUpdates] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [strictness, setStrictness] = useState(0);
+  const [latestRun, setLatestRun] = useState(null);
+  const [running, setRunning] = useState(false);
 
   const load = async () => {
-    const [{ data: modelData }, { data: patternData }, { data: logData }] = await Promise.all([
+    const [{ data: modelData }, { data: patternData }, { data: logData }, { data: runData }] = await Promise.all([
       supabase.from("risk_models").select("*").order("sort_order"),
       supabase.from("market_patterns").select("*").order("sort_order"),
       supabase.from("audit_logs").select("*").eq("target_type", "risk_model").order("created_at", { ascending: false }).limit(5),
+      supabase.from("simulation_runs").select("*").order("created_at", { ascending: false }).limit(1).maybeSingle(),
     ]);
     setModels(modelData ?? []);
     setPatterns(patternData ?? []);
     setLogicUpdates(logData ?? []);
+    setLatestRun(runData ?? null);
     setLoading(false);
   };
 
@@ -39,6 +46,37 @@ export default function RiskEngineConfig() {
     const newStatus = model.status === "critical" ? "active" : "critical";
     const { data, error } = await supabase.from("risk_models").update({ status: newStatus }).eq("id", model.id).select().single();
     if (!error) setModels((prev) => prev.map((m) => (m.id === data.id ? data : m)));
+  };
+
+  const handleRunSimulation = async () => {
+    setRunning(true);
+    // Simplified, disclosed heuristic (NOT a trained backtesting model):
+    // predicted FP reduction and detection yield scale linearly with how much
+    // stricter/looser the slider is set, applied against the real current
+    // total flag volume so the numbers are grounded in real data.
+    const predictedFpReduction = Number((-strictness * 1.12).toFixed(1));
+    const detectionYieldShift = Number((strictness * 0.205).toFixed(1));
+
+    const base = totalFlags / 4;
+    const weeklyCurrent = [0.88, 1.0, 0.94, 1.08].map((f) => Math.round(base * f));
+    const weeklySimulated = weeklyCurrent.map((v) => Math.max(0, Math.round(v * (1 + predictedFpReduction / 100))));
+
+    const { data, error } = await supabase
+      .from("simulation_runs")
+      .insert({
+        run_by: session.user.id,
+        strictness_adjustment: strictness,
+        base_total_flags: totalFlags,
+        predicted_fp_reduction: predictedFpReduction,
+        detection_yield_shift: detectionYieldShift,
+        weekly_current: weeklyCurrent,
+        weekly_simulated: weeklySimulated,
+      })
+      .select()
+      .single();
+
+    if (!error) setLatestRun(data);
+    setRunning(false);
   };
 
   return (
@@ -154,26 +192,81 @@ export default function RiskEngineConfig() {
             ))}
           </div>
 
-          <div className="bg-surface-container-low border border-surface-border rounded p-6 mb-10 relative">
-            <span className="absolute top-6 right-6 font-data-tabular text-data-tabular text-[9px] text-on-surface-variant border border-surface-border rounded px-1.5 py-0.5">
-              ILLUSTRATIVE — NOT YET WIRED TO A REAL BACKTESTING ENGINE
-            </span>
-            <h2 className="font-headline-md text-headline-md text-on-surface mb-1">AI Simulation &amp; Backtesting</h2>
-            <p className="font-body-md text-body-md text-on-surface-variant mb-6">
-              Run "What-If" scenarios to evaluate rule changes before deployment.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <p className="font-label-caps text-label-caps text-on-surface-variant uppercase mb-2">Predicted FP Reduction</p>
-                <p className="font-headline-lg text-headline-lg text-secondary">-22.4%</p>
-                <p className="font-data-tabular text-data-tabular text-on-surface-variant">Estimated 2,800 fewer false alerts/mo</p>
-              </div>
-              <div>
-                <p className="font-label-caps text-label-caps text-on-surface-variant uppercase mb-2">Detection Yield Shift</p>
-                <p className="font-headline-lg text-headline-lg text-data-focus">+4.1%</p>
-                <p className="font-data-tabular text-data-tabular text-on-surface-variant">Improved capture of high-velocity flows</p>
-              </div>
+          <div className="bg-surface-container-low border border-surface-border rounded p-6 mb-10">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="font-headline-md text-headline-md text-on-surface">AI Simulation &amp; Backtesting</h2>
+              <span className="font-data-tabular text-data-tabular text-[9px] text-on-surface-variant border border-surface-border rounded px-1.5 py-0.5">
+                SIMPLIFIED HEURISTIC — NOT A TRAINED MODEL
+              </span>
             </div>
+            <p className="font-body-md text-body-md text-on-surface-variant mb-6">
+              Adjust detection strictness and run a simulation against your live flag volume.
+            </p>
+
+            <div className="flex items-center gap-4 mb-6">
+              <label className="font-label-caps text-label-caps text-on-surface-variant uppercase whitespace-nowrap">
+                Strictness: {strictness > 0 ? `+${strictness}` : strictness}%
+              </label>
+              <input
+                type="range"
+                min={-20}
+                max={20}
+                value={strictness}
+                onChange={(e) => setStrictness(Number(e.target.value))}
+                className="flex-1"
+              />
+              <button
+                onClick={handleRunSimulation}
+                disabled={running}
+                className="bg-primary text-on-primary px-5 py-2 rounded font-label-caps text-label-caps font-semibold disabled:opacity-60"
+              >
+                {running ? "Running..." : "Run New Simulation"}
+              </button>
+            </div>
+
+            {latestRun ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div>
+                    <p className="font-label-caps text-label-caps text-on-surface-variant uppercase mb-2">Predicted FP Reduction</p>
+                    <p className={`font-headline-lg text-headline-lg ${latestRun.predicted_fp_reduction <= 0 ? "text-secondary" : "text-status-critical"}`}>
+                      {latestRun.predicted_fp_reduction > 0 ? "+" : ""}{latestRun.predicted_fp_reduction}%
+                    </p>
+                    <p className="font-data-tabular text-data-tabular text-on-surface-variant">
+                      Based on {latestRun.base_total_flags.toLocaleString()} real flags at strictness {latestRun.strictness_adjustment}%
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-label-caps text-label-caps text-on-surface-variant uppercase mb-2">Detection Yield Shift</p>
+                    <p className="font-headline-lg text-headline-lg text-data-focus">
+                      {latestRun.detection_yield_shift > 0 ? "+" : ""}{latestRun.detection_yield_shift}%
+                    </p>
+                    <p className="font-data-tabular text-data-tabular text-on-surface-variant">Computed from stored simulation run</p>
+                  </div>
+                </div>
+                <div className="flex items-end gap-6 h-[140px] border-b border-surface-border pb-2">
+                  {latestRun.weekly_current.map((current, i) => {
+                    const simulated = latestRun.weekly_simulated[i];
+                    const maxV = Math.max(...latestRun.weekly_current, ...latestRun.weekly_simulated, 1);
+                    return (
+                      <div key={i} className="flex items-end gap-1">
+                        <div className="w-8 bg-surface-border rounded-t" style={{ height: `${(current / maxV) * 120}px` }} title={`Current: ${current}`} />
+                        <div className="w-8 bg-data-focus rounded-t" style={{ height: `${(simulated / maxV) * 120}px` }} title={`Simulated: ${simulated}`} />
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="flex justify-center gap-6 mt-2">
+                  {["W1", "W2", "W3", "W4"].map((w) => (
+                    <span key={w} className="w-[68px] text-center font-data-tabular text-data-tabular text-on-surface-variant text-[10px]">{w}</span>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className="font-data-tabular text-data-tabular text-on-surface-variant">
+                No simulation run yet — adjust strictness and click "Run New Simulation".
+              </p>
+            )}
           </div>
 
           <h2 className="font-headline-md text-headline-md text-on-surface mb-4">Recent Logic Updates</h2>
