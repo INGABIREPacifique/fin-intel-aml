@@ -7,6 +7,12 @@ import CaseDetail from "./pages/CaseDetail";
 import SarFiling from "./pages/SarFiling";
 import AlertQueue from "./pages/AlertQueue";
 import ComingSoon from "./pages/ComingSoon";
+import InstitutionsList from "./pages/InstitutionsList";
+import InstitutionProfile from "./pages/InstitutionProfile";
+
+const ALL_ROLES = ["investigator", "compliance_officer", "admin"];
+const OFFICER_AND_ADMIN = ["compliance_officer", "admin"];
+const ADMIN_ONLY = ["admin"];
 
 export default function App() {
   return (
@@ -15,10 +21,11 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/login" element={<Login />} />
+
           <Route
             path="/dashboard"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={ALL_ROLES}>
                 <Dashboard />
               </ProtectedRoute>
             }
@@ -26,7 +33,7 @@ export default function App() {
           <Route
             path="/alerts"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={ALL_ROLES}>
                 <AlertQueue />
               </ProtectedRoute>
             }
@@ -34,7 +41,7 @@ export default function App() {
           <Route
             path="/investigations"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={ALL_ROLES}>
                 <ComingSoon title="Investigations" />
               </ProtectedRoute>
             }
@@ -42,23 +49,50 @@ export default function App() {
           <Route
             path="/network-graph"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={ALL_ROLES}>
                 <ComingSoon title="Network Graph" />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/institutions"
+            element={
+              <ProtectedRoute allowedRoles={OFFICER_AND_ADMIN}>
+                <InstitutionsList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/institutions/:code"
+            element={
+              <ProtectedRoute allowedRoles={OFFICER_AND_ADMIN}>
+                <InstitutionProfile />
               </ProtectedRoute>
             }
           />
           <Route
             path="/data-health"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={OFFICER_AND_ADMIN}>
                 <ComingSoon title="Data Health" />
               </ProtectedRoute>
             }
           />
+
+          <Route
+            path="/risk-engine"
+            element={
+              <ProtectedRoute allowedRoles={ADMIN_ONLY}>
+                <ComingSoon title="Risk Engine Configuration" />
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="/cases/:caseCode"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={ALL_ROLES}>
                 <CaseDetail />
               </ProtectedRoute>
             }
@@ -66,7 +100,7 @@ export default function App() {
           <Route
             path="/cases/:caseCode/sar"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={ALL_ROLES}>
                 <SarFiling />
               </ProtectedRoute>
             }

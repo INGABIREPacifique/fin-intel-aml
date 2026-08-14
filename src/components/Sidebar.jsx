@@ -2,11 +2,13 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/AuthContext";
 
 const navItems = [
-  { to: "/dashboard", label: "Overview", icon: "grid_view" },
-  { to: "/alerts", label: "Alert Queue", icon: "list_alt" },
-  { to: "/investigations", label: "Investigations", icon: "person_search" },
-  { to: "/network-graph", label: "Network Graph", icon: "hub" },
-  { to: "/data-health", label: "Data Health", icon: "database" },
+  { to: "/dashboard", label: "Overview", icon: "grid_view", roles: ["investigator", "compliance_officer", "admin"] },
+  { to: "/alerts", label: "Alert Queue", icon: "list_alt", roles: ["investigator", "compliance_officer", "admin"] },
+  { to: "/investigations", label: "Investigations", icon: "person_search", roles: ["investigator", "compliance_officer", "admin"] },
+  { to: "/network-graph", label: "Network Graph", icon: "hub", roles: ["investigator", "compliance_officer", "admin"] },
+  { to: "/institutions", label: "Institutions", icon: "account_balance", roles: ["compliance_officer", "admin"] },
+  { to: "/data-health", label: "Data Health", icon: "database", roles: ["compliance_officer", "admin"] },
+  { to: "/risk-engine", label: "Risk Engine", icon: "tune", roles: ["admin"] },
 ];
 
 export default function Sidebar() {
@@ -17,6 +19,8 @@ export default function Sidebar() {
     await signOut();
     navigate("/login");
   };
+
+  const visibleItems = profile ? navItems.filter((item) => item.roles.includes(profile.role)) : [];
 
   return (
     <aside className="w-[240px] bg-surface-container-low border-r border-surface-border p-4 flex flex-col gap-4 min-h-screen shrink-0">
@@ -46,7 +50,7 @@ export default function Sidebar() {
       </button>
 
       <nav className="flex-1 space-y-1">
-        {navItems.map((item) => (
+        {visibleItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
@@ -65,10 +69,12 @@ export default function Sidebar() {
       </nav>
 
       <div className="border-t border-surface-border pt-4 space-y-1">
-        <button className="w-full flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface rounded transition-colors">
-          <span className="material-symbols-outlined text-[18px]">settings</span>
-          <span className="font-label-caps text-label-caps">Settings</span>
-        </button>
+        {profile?.role === "admin" && (
+          <button className="w-full flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface rounded transition-colors">
+            <span className="material-symbols-outlined text-[18px]">settings</span>
+            <span className="font-label-caps text-label-caps">Settings</span>
+          </button>
+        )}
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-status-critical rounded transition-colors"
