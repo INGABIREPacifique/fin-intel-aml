@@ -1,46 +1,104 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import { useAuth } from "../lib/AuthContext";
 import Sidebar from "../components/Sidebar";
 import TopNavBar from "../components/TopNavBar";
 
 export default function InstitutionProfile() {
   const { code } = useParams();
   const navigate = useNavigate();
+  const { session } = useAuth();
   const [institution, setInstitution] = useState(null);
   const [agreements, setAgreements] = useState([]);
   const [auditEntries, setAuditEntries] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [actionMessage, setActionMessage] = useState("");
+
+  const load = async () => {
+    const { data: inst, error } = await supabase
+      .from("institutions")
+      .select("*")
+      .eq("institution_code", code)
+      .single();
+
+    if (error || !inst) {
+      setLoading(false);
+      return;
+    }
+    setInstitution(inst);
+
+    const [{ data: agreementData }, { data: auditData }] = await Promise.all([
+      supabase.from("institution_legal_agreements").select("*").eq("institution_id", inst.id),
+      supabase
+        .from("audit_logs")
+        .select("*")
+        .eq("target_type", "institution")
+        .eq("target_id", inst.id)
+        .order("created_at", { ascending: false }),
+    ]);
+    setAgreements(agreementData ?? []);
+    setAuditEntries(auditData ?? []);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    async function load() {
-      const { data: inst, error } = await supabase
-        .from("institutions")
-        .select("*")
-        .eq("institution_code", code)
-        .single();
-
-      if (error || !inst) {
-        setLoading(false);
-        return;
-      }
-      setInstitution(inst);
-
-      const [{ data: agreementData }, { data: auditData }] = await Promise.all([
-        supabase.from("institution_legal_agreements").select("*").eq("institution_id", inst.id),
-        supabase
-          .from("audit_logs")
-          .select("*")
-          .eq("target_type", "institution")
-          .eq("target_id", inst.id)
-          .order("created_at", { ascending: false }),
-      ]);
-      setAgreements(agreementData ?? []);
-      setAuditEntries(auditData ?? []);
-      setLoading(false);
-    }
     load();
   }, [code]);
+
+  const handleScheduleAudit = async () => {
+    if (!institution) return;
+    const nextDate = new Date();
+    nextDate.setDate(nextDate.getDate() + 90);
+    const nextDateStr = nextDate.toISOString().slice(0, 10);
+
+    const { error } = await supabase
+      .from("institutions")
+      .update({ next_audit_date: nextDateStr })
+      .eq("id", institution.id);
+
+    if (!error) {
+      await supabase.from("audit_logs").insert({
+        actor_id: session.user.id,
+        action: "audit_scheduled",
+        target_type: "institution",
+        target_id: institution.id,
+        target_label: institution.name,
+        details: { note: `Next audit scheduled for ${nextDateStr}` },
+      });
+      setActionMessage(`Next audit scheduled for ${nextDateStr}.`);
+      load();
+    }
+  };
+
+  const handleFullReport = () => {
+    const lines = [
+      `Institution Report — ${institution.name}`,
+      `Institution Code: ${institution.institution_code}`,
+      `Jurisdiction: ${institution.jurisdiction_code}`,
+      `Status: ${institution.status}`,
+      `Last Audit: ${institution.last_audit_date}`,
+      `Next Audit: ${institution.next_audit_date ?? "Not scheduled"}`,
+      "",
+      "-- Metrics --",
+      `SAR Filing Accuracy: ${institution.sar_filing_accuracy}%`,
+      `CTR Pass Rate: ${institution.ctr_pass_rate}%`,
+      `Schema Validations: ${institution.schema_validation_rate}%`,
+      "",
+      "-- Legal Agreements --",
+      ...agreements.map((a) => `${a.title} (${a.reference}) — ${a.status}, expires ${a.expires_on}`),
+      "",
+      "-- Audit Trail --",
+      ...auditEntries.map((e) => `${e.created_at} — ${e.action.replace(/_/g, " ")}: ${e.details?.note ?? ""}`),
+    ];
+    const blob = new Blob([lines.join("\n")], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${institution.institution_code}-report.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   if (loading) {
     return (
@@ -107,13 +165,27 @@ export default function InstitutionProfile() {
                 <span className="font-data-tabular text-data-tabular text-on-surface-variant">
                   Last Audit: {institution.last_audit_date}
                 </span>
+                {institution.next_audit_date && (
+                  <span className="font-data-tabular text-data-tabular text-secondary">
+                    Next Audit: {institution.next_audit_date}
+                  </span>
+                )}
               </div>
+              {actionMessage && (
+                <p className="font-data-tabular text-data-tabular text-status-success mt-2">{actionMessage}</p>
+              )}
             </div>
             <div className="flex gap-3">
-              <button className="border border-surface-border px-4 py-2 rounded text-on-surface font-body-md text-body-md">
+              <button
+                onClick={handleScheduleAudit}
+                className="border border-surface-border px-4 py-2 rounded text-on-surface font-body-md text-body-md hover:bg-surface-container-high transition-colors"
+              >
                 Schedule Next Audit
               </button>
-              <button className="bg-status-success text-on-primary-fixed px-4 py-2 rounded font-body-md text-body-md font-semibold">
+              <button
+                onClick={handleFullReport}
+                className="bg-status-success text-on-primary-fixed px-4 py-2 rounded font-body-md text-body-md font-semibold"
+              >
                 Full Report
               </button>
             </div>

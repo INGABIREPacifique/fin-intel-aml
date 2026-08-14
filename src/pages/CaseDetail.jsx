@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import { useAuth } from "../lib/AuthContext";
 import Sidebar from "../components/Sidebar";
 import TopNavBar from "../components/TopNavBar";
 
@@ -13,27 +14,33 @@ const NODE_COLORS = {
 export default function CaseDetail() {
   const { caseCode } = useParams();
   const navigate = useNavigate();
+  const { session, profile } = useAuth();
   const [alert, setAlert] = useState(null);
+  const [caseRecord, setCaseRecord] = useState(null);
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   const [evidence, setEvidence] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [actionMessage, setActionMessage] = useState("");
+
+  const load = async () => {
+    const [{ data: alertData }, { data: caseData }, { data: nodeData }, { data: edgeData }, { data: evidenceData }] =
+      await Promise.all([
+        supabase.from("alerts").select("*, entities(*)").eq("case_code", caseCode).single(),
+        supabase.from("cases").select("*, profiles(full_name)").eq("case_code", caseCode).maybeSingle(),
+        supabase.from("case_network_nodes").select("*").eq("case_code", caseCode),
+        supabase.from("case_network_edges").select("*").eq("case_code", caseCode),
+        supabase.from("case_evidence").select("*").eq("case_code", caseCode).order("occurred_at", { ascending: false }),
+      ]);
+    setAlert(alertData ?? null);
+    setCaseRecord(caseData ?? null);
+    setNodes(nodeData ?? []);
+    setEdges(edgeData ?? []);
+    setEvidence(evidenceData ?? []);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    async function load() {
-      const [{ data: alertData }, { data: nodeData }, { data: edgeData }, { data: evidenceData }] =
-        await Promise.all([
-          supabase.from("alerts").select("*, entities(*)").eq("case_code", caseCode).single(),
-          supabase.from("case_network_nodes").select("*").eq("case_code", caseCode),
-          supabase.from("case_network_edges").select("*").eq("case_code", caseCode),
-          supabase.from("case_evidence").select("*").eq("case_code", caseCode).order("occurred_at", { ascending: false }),
-        ]);
-      setAlert(alertData ?? null);
-      setNodes(nodeData ?? []);
-      setEdges(edgeData ?? []);
-      setEvidence(evidenceData ?? []);
-      setLoading(false);
-    }
     load();
   }, [caseCode]);
 
@@ -56,6 +63,41 @@ export default function CaseDetail() {
   const nodeByKey = Object.fromEntries(nodes.map((n) => [n.node_key, n]));
   const sweepRatio =
     alert.funds_in && alert.funds_out ? ((alert.funds_out / alert.funds_in) * 100).toFixed(1) : null;
+
+  const handleAssign = async () => {
+    if (!caseRecord) return;
+    const { error } = await supabase.from("cases").update({ assigned_to: session.user.id }).eq("id", caseRecord.id);
+    if (!error) {
+      await supabase.from("audit_logs").insert({
+        actor_id: session.user.id,
+        action: "case_assigned",
+        target_type: "case",
+        target_id: caseRecord.id,
+        target_label: caseCode,
+        details: { note: `Assigned to ${profile?.full_name}` },
+      });
+      setActionMessage(`Assigned to you (${profile?.full_name}).`);
+      load();
+    }
+  };
+
+  const handleFalsePositive = async () => {
+    if (!caseRecord) return;
+    await Promise.all([
+      supabase.from("alerts").update({ status: "closed" }).eq("case_code", caseCode),
+      supabase.from("cases").update({ status: "resolved" }).eq("id", caseRecord.id),
+    ]);
+    await supabase.from("audit_logs").insert({
+      actor_id: session.user.id,
+      action: "marked_false_positive",
+      target_type: "case",
+      target_id: caseRecord.id,
+      target_label: caseCode,
+      details: { note: "Marked as false positive; alert closed, case resolved." },
+    });
+    setActionMessage("Marked as false positive. Case resolved.");
+    load();
+  };
 
   return (
     <div className="min-h-screen bg-background text-on-surface flex">
@@ -253,19 +295,35 @@ export default function CaseDetail() {
               </div>
             </div>
 
-            <div className="border-t border-surface-border p-4 grid grid-cols-[1fr_1fr_1.5fr] gap-2 sticky bottom-0 bg-background">
-              <button className="border border-surface-border bg-surface-container rounded font-label-caps text-label-caps text-on-surface py-3">
-                ASSIGN
-              </button>
-              <button className="border border-surface-border bg-surface-container rounded font-label-caps text-label-caps text-on-surface py-3">
-                FALSE POSITIVE
-              </button>
-              <button
-                onClick={() => navigate(`/cases/${alert.case_code}/sar`)}
-                className="bg-status-critical rounded font-label-caps text-label-caps text-white py-3"
-              >
-                FLAG FOR SAR
-              </button>
+            <div className="border-t border-surface-border p-4 sticky bottom-0 bg-background">
+              {caseRecord?.assigned_to && (
+                <p className="font-data-tabular text-data-tabular text-secondary mb-2">
+                  Assigned to: {caseRecord.profiles?.full_name ?? "—"}
+                </p>
+              )}
+              {actionMessage && (
+                <p className="font-data-tabular text-data-tabular text-status-success mb-2">{actionMessage}</p>
+              )}
+              <div className="grid grid-cols-[1fr_1fr_1.5fr] gap-2">
+                <button
+                  onClick={handleAssign}
+                  className="border border-surface-border bg-surface-container rounded font-label-caps text-label-caps text-on-surface py-3 hover:bg-surface-container-high transition-colors"
+                >
+                  ASSIGN
+                </button>
+                <button
+                  onClick={handleFalsePositive}
+                  className="border border-surface-border bg-surface-container rounded font-label-caps text-label-caps text-on-surface py-3 hover:bg-surface-container-high transition-colors"
+                >
+                  FALSE POSITIVE
+                </button>
+                <button
+                  onClick={() => navigate(`/cases/${alert.case_code}/sar`)}
+                  className="bg-status-critical rounded font-label-caps text-label-caps text-white py-3"
+                >
+                  FLAG FOR SAR
+                </button>
+              </div>
             </div>
           </div>
         </div>
