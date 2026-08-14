@@ -13,6 +13,7 @@ import GlobalAuditTrail from "./pages/GlobalAuditTrail";
 import RiskEngineConfig from "./pages/RiskEngineConfig";
 import NewInvestigation from "./pages/NewInvestigation";
 import Investigations from "./pages/Investigations";
+import DataHealth from "./pages/DataHealth";
 
 const ALL_ROLES = ["investigator", "compliance_officer", "admin"];
 const OFFICER_AND_ADMIN = ["compliance_officer", "admin"];
@@ -87,7 +88,7 @@ export default function App() {
             path="/data-health"
             element={
               <ProtectedRoute allowedRoles={OFFICER_AND_ADMIN}>
-                <ComingSoon title="Data Health" />
+                <DataHealth />
               </ProtectedRoute>
             }
           />
