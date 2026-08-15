@@ -14,6 +14,8 @@ import RiskEngineConfig from "./pages/RiskEngineConfig";
 import NewInvestigation from "./pages/NewInvestigation";
 import Investigations from "./pages/Investigations";
 import DataHealth from "./pages/DataHealth";
+import SecurityConfig from "./pages/SecurityConfig";
+import AccessPermissions from "./pages/AccessPermissions";
 
 const ALL_ROLES = ["investigator", "compliance_officer", "admin"];
 const OFFICER_AND_ADMIN = ["compliance_officer", "admin"];
@@ -106,6 +108,22 @@ export default function App() {
             element={
               <ProtectedRoute allowedRoles={ADMIN_ONLY}>
                 <RiskEngineConfig />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/security"
+            element={
+              <ProtectedRoute allowedRoles={ADMIN_ONLY}>
+                <SecurityConfig />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/access"
+            element={
+              <ProtectedRoute allowedRoles={ADMIN_ONLY}>
+                <AccessPermissions />
               </ProtectedRoute>
             }
           />

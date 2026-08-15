@@ -10,6 +10,7 @@ const navItems = [
   { to: "/audit-trail", label: "Audit Logs", icon: "manage_search", roles: ["compliance_officer", "admin"] },
   { to: "/data-health", label: "Data Health", icon: "database", roles: ["compliance_officer", "admin"] },
   { to: "/risk-engine", label: "Risk Engine", icon: "tune", roles: ["admin"] },
+  { to: "/admin/security", label: "System Config", icon: "admin_panel_settings", roles: ["admin"] },
 ];
 
 export default function Sidebar() {
