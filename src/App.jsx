@@ -20,6 +20,7 @@ import ApiGateway from "./pages/ApiGateway";
 import InstitutionOnboarding from "./pages/InstitutionOnboarding";
 import NetworkAnalysis from "./pages/NetworkAnalysis";
 import EntitySearch from "./pages/EntitySearch";
+import GraphExplorer from "./pages/GraphExplorer";
 import MobileFieldHub from "./pages/MobileFieldHub";
 import MobileAlertDetail from "./pages/MobileAlertDetail";
 
@@ -80,6 +81,14 @@ export default function App() {
             element={
               <ProtectedRoute allowedRoles={ALL_ROLES}>
                 <EntitySearch />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/graph-explorer"
+            element={
+              <ProtectedRoute allowedRoles={ALL_ROLES}>
+                <GraphExplorer />
               </ProtectedRoute>
             }
           />
