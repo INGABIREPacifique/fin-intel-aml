@@ -16,6 +16,8 @@ import Investigations from "./pages/Investigations";
 import DataHealth from "./pages/DataHealth";
 import SecurityConfig from "./pages/SecurityConfig";
 import AccessPermissions from "./pages/AccessPermissions";
+import ApiGateway from "./pages/ApiGateway";
+import InstitutionOnboarding from "./pages/InstitutionOnboarding";
 
 const ALL_ROLES = ["investigator", "compliance_officer", "admin"];
 const OFFICER_AND_ADMIN = ["compliance_officer", "admin"];
@@ -124,6 +126,30 @@ export default function App() {
             element={
               <ProtectedRoute allowedRoles={ADMIN_ONLY}>
                 <AccessPermissions />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/integrations"
+            element={
+              <ProtectedRoute allowedRoles={ADMIN_ONLY}>
+                <ApiGateway />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/api-keys"
+            element={
+              <ProtectedRoute allowedRoles={ADMIN_ONLY}>
+                <ApiGateway />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/institutions/new"
+            element={
+              <ProtectedRoute allowedRoles={OFFICER_AND_ADMIN}>
+                <InstitutionOnboarding />
               </ProtectedRoute>
             }
           />

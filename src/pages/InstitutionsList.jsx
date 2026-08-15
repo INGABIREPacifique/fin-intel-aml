@@ -24,10 +24,20 @@ export default function InstitutionsList() {
       <div className="flex-1 flex flex-col">
         <TopNavBar />
         <main className="flex-1 p-8">
-          <h1 className="font-headline-lg text-headline-lg text-on-surface mb-2">Institutions</h1>
-          <p className="font-body-md text-body-md text-on-surface-variant mb-8">
-            Partner reporting institutions and their compliance standing.
-          </p>
+          <div className="flex items-end justify-between mb-8">
+            <div>
+              <h1 className="font-headline-lg text-headline-lg text-on-surface mb-2">Institutions</h1>
+              <p className="font-body-md text-body-md text-on-surface-variant">
+                Partner reporting institutions and their compliance standing.
+              </p>
+            </div>
+            <button
+              onClick={() => navigate("/institutions/new")}
+              className="bg-secondary text-on-secondary px-4 py-2 rounded font-label-caps text-label-caps font-semibold"
+            >
+              + Onboard Institution
+            </button>
+          </div>
 
           <div className="bg-surface-container border border-surface-border rounded divide-y divide-surface-border">
             {loading && (
