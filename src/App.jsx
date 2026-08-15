@@ -20,6 +20,8 @@ import ApiGateway from "./pages/ApiGateway";
 import InstitutionOnboarding from "./pages/InstitutionOnboarding";
 import NetworkAnalysis from "./pages/NetworkAnalysis";
 import EntitySearch from "./pages/EntitySearch";
+import MobileFieldHub from "./pages/MobileFieldHub";
+import MobileAlertDetail from "./pages/MobileAlertDetail";
 
 const ALL_ROLES = ["investigator", "compliance_officer", "admin"];
 const OFFICER_AND_ADMIN = ["compliance_officer", "admin"];
@@ -78,6 +80,22 @@ export default function App() {
             element={
               <ProtectedRoute allowedRoles={ALL_ROLES}>
                 <EntitySearch />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/mobile"
+            element={
+              <ProtectedRoute allowedRoles={ALL_ROLES}>
+                <MobileFieldHub />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/mobile/alerts/:caseCode"
+            element={
+              <ProtectedRoute allowedRoles={ALL_ROLES}>
+                <MobileAlertDetail />
               </ProtectedRoute>
             }
           />
