@@ -6,6 +6,7 @@ const navItems = [
   { to: "/alerts", label: "Alert Queue", icon: "list_alt", roles: ["investigator", "compliance_officer", "admin"] },
   { to: "/investigations", label: "Investigations", icon: "person_search", roles: ["investigator", "compliance_officer", "admin"] },
   { to: "/network-graph", label: "Network Graph", icon: "hub", roles: ["investigator", "compliance_officer", "admin"] },
+  { to: "/entities", label: "Entity Search", icon: "person_search", roles: ["investigator", "compliance_officer", "admin"] },
   { to: "/institutions", label: "Institutions", icon: "account_balance", roles: ["compliance_officer", "admin"] },
   { to: "/audit-trail", label: "Audit Logs", icon: "manage_search", roles: ["compliance_officer", "admin"] },
   { to: "/data-health", label: "Data Health", icon: "database", roles: ["compliance_officer", "admin"] },

@@ -18,6 +18,8 @@ import SecurityConfig from "./pages/SecurityConfig";
 import AccessPermissions from "./pages/AccessPermissions";
 import ApiGateway from "./pages/ApiGateway";
 import InstitutionOnboarding from "./pages/InstitutionOnboarding";
+import NetworkAnalysis from "./pages/NetworkAnalysis";
+import EntitySearch from "./pages/EntitySearch";
 
 const ALL_ROLES = ["investigator", "compliance_officer", "admin"];
 const OFFICER_AND_ADMIN = ["compliance_officer", "admin"];
@@ -67,7 +69,15 @@ export default function App() {
             path="/network-graph"
             element={
               <ProtectedRoute allowedRoles={ALL_ROLES}>
-                <ComingSoon title="Network Graph" />
+                <NetworkAnalysis />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/entities"
+            element={
+              <ProtectedRoute allowedRoles={ALL_ROLES}>
+                <EntitySearch />
               </ProtectedRoute>
             }
           />
