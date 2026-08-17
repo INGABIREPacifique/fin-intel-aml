@@ -10,6 +10,7 @@ export default function EntitySearch() {
   const [query, setQuery] = useState("");
   const [watchlistOnly, setWatchlistOnly] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const load = async () => {
     const { data, error } = await supabase.from("entities").select("*").order("entity_name");
@@ -22,13 +23,18 @@ export default function EntitySearch() {
   }, []);
 
   const toggleWatchlist = async (entity) => {
+    setErrorMessage("");
     const { data, error } = await supabase
       .from("entities")
       .update({ watchlisted: !entity.watchlisted })
       .eq("id", entity.id)
       .select()
       .single();
-    if (!error) setEntities((prev) => prev.map((e) => (e.id === data.id ? data : e)));
+    if (error) {
+      setErrorMessage(`Couldn't update watchlist: ${error.message}`);
+    } else {
+      setEntities((prev) => prev.map((e) => (e.id === data.id ? data : e)));
+    }
   };
 
   const filtered = entities.filter((e) => {
@@ -60,6 +66,10 @@ export default function EntitySearch() {
               Watchlist only
             </label>
           </div>
+
+          {errorMessage && (
+            <p className="font-data-tabular text-data-tabular text-status-critical mb-4">{errorMessage}</p>
+          )}
 
           <div className="bg-surface-container border border-surface-border rounded divide-y divide-surface-border">
             {loading && (

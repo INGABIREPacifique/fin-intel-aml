@@ -22,6 +22,7 @@ export default function DataHealth() {
   const [recordCount, setRecordCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const load = async () => {
     const [{ data: instData }, { data: auditData }, { count: entityCount }, { count: alertCount }, { count: caseCount }] =
@@ -44,7 +45,16 @@ export default function DataHealth() {
 
   const handleSyncNow = async () => {
     setSyncing(true);
-    await supabase.from("institutions").update({ sync_status: "live", last_sync_at: new Date().toISOString() }).neq("id", "00000000-0000-0000-0000-000000000000");
+    setErrorMessage("");
+    const { error: updateErr } = await supabase
+      .from("institutions")
+      .update({ sync_status: "live", last_sync_at: new Date().toISOString() })
+      .neq("id", "00000000-0000-0000-0000-000000000000");
+    if (updateErr) {
+      setErrorMessage(`Sync failed: ${updateErr.message}`);
+      setSyncing(false);
+      return;
+    }
     await supabase.from("audit_logs").insert({
       actor_id: session.user.id,
       action: "data_sync_triggered",
@@ -125,6 +135,9 @@ export default function DataHealth() {
                   {syncing ? "Syncing..." : "Sync Now"}
                 </button>
               </div>
+              {errorMessage && (
+                <p className="font-data-tabular text-data-tabular text-status-critical mb-3">{errorMessage}</p>
+              )}
               <div className="space-y-3">
                 {institutions.map((inst) => {
                   const syncStatus = inst.sync_status ?? "unknown";

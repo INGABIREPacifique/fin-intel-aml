@@ -57,18 +57,20 @@ export default function InstitutionProfile() {
       .update({ next_audit_date: nextDateStr })
       .eq("id", institution.id);
 
-    if (!error) {
-      await supabase.from("audit_logs").insert({
-        actor_id: session.user.id,
-        action: "audit_scheduled",
-        target_type: "institution",
-        target_id: institution.id,
-        target_label: institution.name,
-        details: { note: `Next audit scheduled for ${nextDateStr}` },
-      });
-      setActionMessage(`Next audit scheduled for ${nextDateStr}.`);
-      load();
+    if (error) {
+      setActionMessage(`Couldn't schedule audit: ${error.message}`);
+      return;
     }
+    await supabase.from("audit_logs").insert({
+      actor_id: session.user.id,
+      action: "audit_scheduled",
+      target_type: "institution",
+      target_id: institution.id,
+      target_label: institution.name,
+      details: { note: `Next audit scheduled for ${nextDateStr}` },
+    });
+    setActionMessage(`Next audit scheduled for ${nextDateStr}.`);
+    load();
   };
 
   const handleFullReport = () => {
@@ -172,7 +174,9 @@ export default function InstitutionProfile() {
                 )}
               </div>
               {actionMessage && (
-                <p className="font-data-tabular text-data-tabular text-status-success mt-2">{actionMessage}</p>
+                <p className={`font-data-tabular text-data-tabular mt-2 ${actionMessage.startsWith("Couldn't") ? "text-status-critical" : "text-status-success"}`}>
+                  {actionMessage}
+                </p>
               )}
             </div>
             <div className="flex gap-3">
