@@ -2,8 +2,69 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Dark theme (default) */
+:root,
+.dark {
+  --color-background: #081425;
+  --color-on-background: #d8e3fb;
+  --color-surface: #081425;
+  --color-surface-variant: #2a3548;
+  --color-surface-border: #334155;
+  --color-surface-container-lowest: #040e1f;
+  --color-surface-container-low: #111c2d;
+  --color-surface-container: #152031;
+  --color-surface-container-high: #1f2a3c;
+  --color-surface-container-highest: #2a3548;
+  --color-on-surface: #d8e3fb;
+  --color-on-surface-variant: #c6c6cd;
+  --color-outline: #909097;
+  --color-outline-variant: #45464d;
+  --color-primary: #bec6e0;
+  --color-on-primary: #283044;
+  --color-on-primary-fixed: #131b2e;
+  --color-primary-container: #0f172a;
+  --color-secondary: #4edea3;
+  --color-on-secondary: #003824;
+  --color-error-container: #93000a;
+  --color-on-error-container: #ffdad6;
+  --color-status-critical: #ef4444;
+  --color-status-warning: #f59e0b;
+  --color-status-success: #10b981;
+  --color-data-focus: #38bdf8;
+}
+
+/* Light theme */
+.light {
+  --color-background: #f8fafc;
+  --color-on-background: #0f172a;
+  --color-surface: #ffffff;
+  --color-surface-variant: #e2e8f0;
+  --color-surface-border: #e2e8f0;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f8fafc;
+  --color-surface-container: #f1f5f9;
+  --color-surface-container-high: #e2e8f0;
+  --color-surface-container-highest: #cbd5e1;
+  --color-on-surface: #0f172a;
+  --color-on-surface-variant: #475569;
+  --color-outline: #94a3b8;
+  --color-outline-variant: #cbd5e1;
+  --color-primary: #334155;
+  --color-on-primary: #ffffff;
+  --color-on-primary-fixed: #0f172a;
+  --color-primary-container: #f1f5f9;
+  --color-secondary: #059669;
+  --color-on-secondary: #ffffff;
+  --color-error-container: #fee2e2;
+  --color-on-error-container: #7f1d1d;
+  --color-status-critical: #dc2626;
+  --color-status-warning: #d97706;
+  --color-status-success: #059669;
+  --color-data-focus: #0284c7;
+}
+
 @layer base {
   body {
-    @apply bg-background text-on-surface;
+    @apply bg-background text-on-surface transition-colors duration-200;
   }
 }

@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../lib/AuthContext";
+import { useTheme } from "../lib/ThemeContext";
 
 export default function TopNavBar() {
   const { profile } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -134,6 +136,15 @@ export default function TopNavBar() {
         )}
       </div>
       <div className="flex items-center gap-4">
+        <button
+          onClick={toggleTheme}
+          className="p-2 rounded-full hover:bg-surface-container-high transition-colors"
+          title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+        >
+          <span className="material-symbols-outlined text-on-surface-variant text-[20px]">
+            {theme === "dark" ? "light_mode" : "dark_mode"}
+          </span>
+        </button>
         <div className="flex items-center gap-2 relative" ref={ref}>
           <button
             onClick={toggleOpen}
