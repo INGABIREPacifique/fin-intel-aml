@@ -76,12 +76,13 @@ export default function Sidebar() {
       </nav>
 
       <div className="border-t border-surface-border pt-4 space-y-1">
-        {profile?.role === "admin" && (
-          <button className="w-full flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface rounded transition-colors">
-            <span className="material-symbols-outlined text-[18px]">settings</span>
-            <span className="font-label-caps text-label-caps">Settings</span>
-          </button>
-        )}
+        <button
+          onClick={() => navigate("/settings")}
+          className="w-full flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface rounded transition-colors"
+        >
+          <span className="material-symbols-outlined text-[18px]">settings</span>
+          <span className="font-label-caps text-label-caps">Settings</span>
+        </button>
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-status-critical rounded transition-colors"

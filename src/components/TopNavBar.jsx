@@ -11,13 +11,40 @@ export default function TopNavBar() {
   const [loaded, setLoaded] = useState(false);
   const ref = useRef(null);
 
+  const [query, setQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const [entityResults, setEntityResults] = useState([]);
+  const [caseResults, setCaseResults] = useState([]);
+  const searchRef = useRef(null);
+
   useEffect(() => {
     function handleClickOutside(e) {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+      if (searchRef.current && !searchRef.current.contains(e.target)) setSearchOpen(false);
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!query.trim()) {
+      setEntityResults([]);
+      setCaseResults([]);
+      return;
+    }
+    const timeout = setTimeout(async () => {
+      setSearching(true);
+      const [{ data: entities }, { data: cases }] = await Promise.all([
+        supabase.from("entities").select("id, entity_name, entity_type").ilike("entity_name", `%${query}%`).limit(5),
+        supabase.from("cases").select("case_code, title").or(`title.ilike.%${query}%,case_code.ilike.%${query}%`).limit(5),
+      ]);
+      setEntityResults(entities ?? []);
+      setCaseResults(cases ?? []);
+      setSearching(false);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [query]);
 
   const toggleOpen = async () => {
     const next = !open;
@@ -33,24 +60,78 @@ export default function TopNavBar() {
     }
   };
 
+  const goToCase = (caseCode) => {
+    navigate(`/cases/${caseCode}`);
+    setSearchOpen(false);
+    setQuery("");
+  };
+
+  const goToEntities = () => {
+    navigate("/entities");
+    setSearchOpen(false);
+    setQuery("");
+  };
+
   return (
     <header className="bg-background border-b border-surface-border h-16 flex items-center justify-between px-8 shrink-0">
       <h1 className="font-body-lg text-body-lg font-bold text-on-surface">FIN-INTELLIGENCE</h1>
-      <div className="flex-1 max-w-[448px] mx-8">
+      <div className="flex-1 max-w-[448px] mx-8 relative" ref={searchRef}>
         <div className="relative">
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[16px]">
             search
           </span>
           <input
             type="text"
-            readOnly
-            placeholder="Search entities, transactions, or alerts..."
-            className="w-full bg-primary-container border border-surface-border text-on-surface-variant text-sm pl-9 pr-16 py-2 rounded focus:outline-none"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => setSearchOpen(true)}
+            placeholder="Search entities, cases..."
+            className="w-full bg-primary-container border border-surface-border text-on-surface text-sm pl-9 pr-16 py-2 rounded focus:outline-none focus:border-data-focus"
           />
           <span className="absolute right-3 top-1/2 -translate-y-1/2 bg-surface-container border border-surface-border text-on-surface-variant text-[10px] font-data-tabular px-2 py-0.5 rounded">
             CMD+K
           </span>
         </div>
+        {searchOpen && query.trim() && (
+          <div className="absolute left-0 top-11 w-full bg-surface-container border border-surface-border rounded shadow-xl z-50 max-h-[360px] overflow-auto">
+            {searching && (
+              <p className="p-3 font-data-tabular text-data-tabular text-on-surface-variant">Searching...</p>
+            )}
+            {!searching && entityResults.length === 0 && caseResults.length === 0 && (
+              <p className="p-3 font-data-tabular text-data-tabular text-on-surface-variant">No results.</p>
+            )}
+            {entityResults.length > 0 && (
+              <div>
+                <p className="px-3 pt-3 font-label-caps text-label-caps text-on-surface-variant uppercase">Entities</p>
+                {entityResults.map((e) => (
+                  <button
+                    key={e.id}
+                    onClick={goToEntities}
+                    className="w-full text-left px-3 py-2 hover:bg-surface-container-high transition-colors"
+                  >
+                    <p className="font-body-md text-body-md text-on-surface">{e.entity_name}</p>
+                    <p className="font-data-tabular text-data-tabular text-on-surface-variant">{e.entity_type}</p>
+                  </button>
+                ))}
+              </div>
+            )}
+            {caseResults.length > 0 && (
+              <div>
+                <p className="px-3 pt-3 font-label-caps text-label-caps text-on-surface-variant uppercase">Cases</p>
+                {caseResults.map((c) => (
+                  <button
+                    key={c.case_code}
+                    onClick={() => goToCase(c.case_code)}
+                    className="w-full text-left px-3 py-2 hover:bg-surface-container-high transition-colors"
+                  >
+                    <p className="font-body-md text-body-md text-on-surface">{c.title}</p>
+                    <p className="font-data-tabular text-data-tabular text-on-surface-variant">{c.case_code}</p>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2 relative" ref={ref}>
@@ -87,14 +168,15 @@ export default function TopNavBar() {
           )}
         </div>
         {profile && (
-          <div
+          <button
+            onClick={() => navigate("/settings")}
             className="w-8 h-8 rounded-full bg-surface-container-high border border-surface-border flex items-center justify-center"
             title={`${profile.full_name} — ${profile.role.replace("_", " ")}`}
           >
             <span className="font-label-caps text-label-caps text-secondary">
               {profile.full_name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
             </span>
-          </div>
+          </button>
         )}
       </div>
     </header>
