@@ -72,11 +72,11 @@ create policy "Authenticated staff can manage case_action_items" on case_action_
 -- Seed a real workspace for the Apex Global case (CASE-2023-8942) so the
 -- screen has something real to show immediately.
 insert into case_milestones (case_id, title, detail, status, occurred_on, sort_order)
-select id, 'Initial SAR Filed', 'Global Bank Corp', 'done', '2023-10-12', 1 from cases where case_code = 'CASE-2023-8942'
+select id, 'Initial SAR Filed', 'Global Bank Corp', 'done', '2023-10-12'::date, 1 from cases where case_code = 'CASE-2023-8942'
 union all
-select id, 'Task Force Formed', 'FinCEN / Interpol', 'done', '2023-11-05', 2 from cases where case_code = 'CASE-2023-8942'
+select id, 'Task Force Formed', 'FinCEN / Interpol', 'done', '2023-11-05'::date, 2 from cases where case_code = 'CASE-2023-8942'
 union all
-select id, 'Asset Freeze Execution', 'Awaiting Court Order', 'pending', null, 3 from cases where case_code = 'CASE-2023-8942';
+select id, 'Asset Freeze Execution', 'Awaiting Court Order', 'pending', null::date, 3 from cases where case_code = 'CASE-2023-8942';
 
 insert into case_action_items (case_id, title, due_label)
 select id, 'Verify beneficial ownership of Cyprus entities.', 'DUE TODAY' from cases where case_code = 'CASE-2023-8942'
