@@ -5,7 +5,9 @@ import Sidebar from "../components/Sidebar";
 import TopNavBar from "../components/TopNavBar";
 
 function timeAgo(dateStr) {
+  if (!dateStr) return "never";
   const diffMs = Date.now() - new Date(dateStr).getTime();
+  if (Number.isNaN(diffMs)) return "unknown";
   const mins = Math.round(diffMs / 60000);
   if (mins < 1) return "just now";
   if (mins < 60) return `${mins}m ago`;
@@ -124,22 +126,25 @@ export default function DataHealth() {
                 </button>
               </div>
               <div className="space-y-3">
-                {institutions.map((inst) => (
+                {institutions.map((inst) => {
+                  const syncStatus = inst.sync_status ?? "unknown";
+                  return (
                   <div
                     key={inst.id}
-                    className={`bg-surface-container border rounded p-3 flex items-center justify-between ${inst.sync_status === "lagging" ? "border-status-warning" : "border-surface-border"}`}
+                    className={`bg-surface-container border rounded p-3 flex items-center justify-between ${syncStatus === "lagging" ? "border-status-warning" : "border-surface-border"}`}
                   >
                     <div>
                       <p className="font-body-md text-body-md text-on-surface font-semibold">{inst.name}</p>
-                      <p className={`font-data-tabular text-data-tabular ${inst.sync_status === "lagging" ? "text-status-warning" : "text-on-surface-variant"}`}>
+                      <p className={`font-data-tabular text-data-tabular ${syncStatus === "lagging" ? "text-status-warning" : "text-on-surface-variant"}`}>
                         Last sync: {timeAgo(inst.last_sync_at)}
                       </p>
                     </div>
-                    <span className={`font-data-tabular text-data-tabular px-2 py-0.5 rounded border ${inst.sync_status === "live" ? "text-status-success border-status-success bg-status-success/10" : "text-status-warning border-status-warning bg-status-warning/10"}`}>
-                      {inst.sync_status.toUpperCase()}
+                    <span className={`font-data-tabular text-data-tabular px-2 py-0.5 rounded border ${syncStatus === "live" ? "text-status-success border-status-success bg-status-success/10" : "text-status-warning border-status-warning bg-status-warning/10"}`}>
+                      {syncStatus.toUpperCase()}
                     </span>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
