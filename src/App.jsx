@@ -21,6 +21,8 @@ import InstitutionOnboarding from "./pages/InstitutionOnboarding";
 import NetworkAnalysis from "./pages/NetworkAnalysis";
 import EntitySearch from "./pages/EntitySearch";
 import GraphExplorer from "./pages/GraphExplorer";
+import RiskModelDetail from "./pages/RiskModelDetail";
+import CaseWorkspace from "./pages/CaseWorkspace";
 import MobileFieldHub from "./pages/MobileFieldHub";
 import MobileAlertDetail from "./pages/MobileAlertDetail";
 
@@ -147,6 +149,22 @@ export default function App() {
             element={
               <ProtectedRoute allowedRoles={ADMIN_ONLY}>
                 <RiskEngineConfig />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/risk-engine/:modelId"
+            element={
+              <ProtectedRoute allowedRoles={ADMIN_ONLY}>
+                <RiskModelDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cases/:caseCode/workspace"
+            element={
+              <ProtectedRoute allowedRoles={ALL_ROLES}>
+                <CaseWorkspace />
               </ProtectedRoute>
             }
           />

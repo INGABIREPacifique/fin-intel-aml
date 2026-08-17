@@ -304,7 +304,7 @@ export default function CaseDetail() {
               {actionMessage && (
                 <p className="font-data-tabular text-data-tabular text-status-success mb-2">{actionMessage}</p>
               )}
-              <div className="grid grid-cols-[1fr_1fr_1.5fr] gap-2">
+              <div className="grid grid-cols-[1fr_1fr_1fr_1.5fr] gap-2">
                 <button
                   onClick={handleAssign}
                   className="border border-surface-border bg-surface-container rounded font-label-caps text-label-caps text-on-surface py-3 hover:bg-surface-container-high transition-colors"
@@ -316,6 +316,12 @@ export default function CaseDetail() {
                   className="border border-surface-border bg-surface-container rounded font-label-caps text-label-caps text-on-surface py-3 hover:bg-surface-container-high transition-colors"
                 >
                   FALSE POSITIVE
+                </button>
+                <button
+                  onClick={() => navigate(`/cases/${alert.case_code}/workspace`)}
+                  className="border border-secondary text-secondary rounded font-label-caps text-label-caps py-3 hover:bg-secondary/10 transition-colors"
+                >
+                  WORKSPACE
                 </button>
                 <button
                   onClick={() => navigate(`/cases/${alert.case_code}/sar`)}

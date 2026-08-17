@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../lib/AuthContext";
 import Sidebar from "../components/Sidebar";
@@ -12,6 +13,7 @@ const statusStyle = {
 
 export default function RiskEngineConfig() {
   const { session } = useAuth();
+  const navigate = useNavigate();
   const [models, setModels] = useState([]);
   const [patterns, setPatterns] = useState([]);
   const [logicUpdates, setLogicUpdates] = useState([]);
@@ -155,7 +157,12 @@ export default function RiskEngineConfig() {
               <div key={m.id} className="bg-surface-container-low border border-surface-border rounded-lg p-6 relative overflow-hidden">
                 <div className={`absolute left-0 top-0 bottom-0 w-1 ${m.status === "critical" ? "bg-status-critical" : m.status === "testing" ? "bg-status-warning" : "bg-secondary"}`} />
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-headline-sm text-headline-sm text-on-surface">{m.name}</h3>
+                  <h3
+                    onClick={() => navigate(`/risk-engine/${m.id}`)}
+                    className="font-headline-sm text-headline-sm text-on-surface cursor-pointer hover:text-secondary transition-colors"
+                  >
+                    {m.name}
+                  </h3>
                   <span className={`font-label-caps text-label-caps px-2 py-0.5 rounded border ${statusStyle[m.status]}`}>
                     {m.status.toUpperCase()}
                   </span>
