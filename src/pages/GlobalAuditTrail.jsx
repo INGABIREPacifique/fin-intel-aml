@@ -150,7 +150,7 @@ export default function GlobalAuditTrail() {
             </div>
 
             <div className="bg-surface-container border border-surface-border rounded p-5">
-              <h2 className="font-headline-sm text-headline-sm text-on-surface mb-4">Event Inspector</h2>
+              <h2 className="font-headline-sm text-headline-sm text-secondary mb-4">Event Inspector</h2>
               {!selected && (
                 <p className="font-data-tabular text-data-tabular text-on-surface-variant">
                   Select an event from the table.

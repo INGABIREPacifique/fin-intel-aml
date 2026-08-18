@@ -115,7 +115,7 @@ export default function CaseWorkspace() {
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
             <div className="bg-surface-container border border-surface-border rounded p-5">
-              <h2 className="font-headline-sm text-headline-sm text-on-surface mb-4">Joint Task Force</h2>
+              <h2 className="font-headline-sm text-headline-sm text-secondary mb-4">Joint Task Force</h2>
               <div className="space-y-3">
                 {taskForce.length === 0 && (
                   <p className="font-data-tabular text-data-tabular text-on-surface-variant">No members yet — be the first to join.</p>
@@ -135,7 +135,7 @@ export default function CaseWorkspace() {
             </div>
 
             <div className="lg:col-span-2 bg-surface-container border border-surface-border rounded p-5">
-              <h2 className="font-headline-sm text-headline-sm text-on-surface mb-4">Evidence &amp; Comm Log</h2>
+              <h2 className="font-headline-sm text-headline-sm text-secondary mb-4">Evidence &amp; Comm Log</h2>
               <div className="space-y-4 max-h-[400px] overflow-auto mb-4">
                 {evidenceLog.length === 0 && (
                   <p className="font-data-tabular text-data-tabular text-on-surface-variant">No entries yet.</p>
@@ -171,7 +171,7 @@ export default function CaseWorkspace() {
 
             <div className="flex flex-col gap-4">
               <div className="bg-surface-container border border-surface-border rounded p-5">
-                <h2 className="font-headline-sm text-headline-sm text-on-surface mb-4">Key Milestones</h2>
+                <h2 className="font-headline-sm text-headline-sm text-secondary mb-4">Key Milestones</h2>
                 <div className="space-y-3">
                   {milestones.map((m) => (
                     <div key={m.id} className="flex gap-3">
@@ -187,7 +187,7 @@ export default function CaseWorkspace() {
               </div>
 
               <div className="bg-surface-container border border-surface-border rounded p-5">
-                <h2 className="font-headline-sm text-headline-sm text-on-surface mb-4">Action Items</h2>
+                <h2 className="font-headline-sm text-headline-sm text-secondary mb-4">Action Items</h2>
                 <div className="space-y-3">
                   {actionItems.map((a) => (
                     <label key={a.id} className="flex items-start gap-2">

@@ -75,19 +75,19 @@ export default function SecurityConfig() {
           <div className="bg-surface-container-high border border-surface-border rounded p-6 relative">
             <span className="absolute top-4 right-4 font-data-tabular text-data-tabular text-[9px] text-on-surface-variant border border-surface-border rounded px-1.5 py-0.5">DEMO</span>
             <p className="font-body-md text-body-md text-on-surface-variant mb-1">MFA Status</p>
-            <p className="font-headline-sm text-headline-sm text-on-surface mb-1">Enforced Globally</p>
+            <p className="font-headline-sm text-headline-sm text-secondary mb-1">Enforced Globally</p>
             <p className="font-data-tabular text-data-tabular text-on-surface-variant">Level 3+ Accounts</p>
           </div>
           <div className="bg-surface-container-high border border-surface-border rounded p-6 relative">
             <span className="absolute top-4 right-4 font-data-tabular text-data-tabular text-[9px] text-on-surface-variant border border-surface-border rounded px-1.5 py-0.5">DEMO</span>
             <p className="font-body-md text-body-md text-on-surface-variant mb-1">Data Encryption</p>
-            <p className="font-headline-sm text-headline-sm text-on-surface mb-1">System-Wide Active</p>
+            <p className="font-headline-sm text-headline-sm text-secondary mb-1">System-Wide Active</p>
             <p className="font-data-tabular text-data-tabular text-on-surface-variant">Key rotation: 14 days</p>
           </div>
           <div className="bg-surface-container-high border border-surface-border rounded p-6 relative">
             <span className="absolute top-4 right-4 font-data-tabular text-data-tabular text-[9px] text-on-surface-variant border border-surface-border rounded px-1.5 py-0.5">DEMO</span>
             <p className="font-body-md text-body-md text-on-surface-variant mb-1">Last System Backup</p>
-            <p className="font-headline-sm text-headline-sm text-on-surface mb-1">2 hours ago</p>
+            <p className="font-headline-sm text-headline-sm text-secondary mb-1">2 hours ago</p>
             <p className="font-data-tabular text-data-tabular text-on-surface-variant">Location: US-East-Secure</p>
           </div>
         </div>
@@ -95,7 +95,7 @@ export default function SecurityConfig() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 bg-surface-container-high border border-surface-border rounded overflow-hidden">
             <div className="bg-surface-container-low border-b border-surface-border px-6 py-4">
-              <h2 className="font-headline-sm text-headline-sm text-on-surface">Access Control Management</h2>
+              <h2 className="font-headline-sm text-headline-sm text-secondary">Access Control Management</h2>
             </div>
             <table className="w-full">
               <thead>
@@ -134,7 +134,7 @@ export default function SecurityConfig() {
           </div>
 
           <div className="bg-surface-container-high border border-surface-border rounded p-6">
-            <h2 className="font-headline-sm text-headline-sm text-on-surface mb-6">Session Governance</h2>
+            <h2 className="font-headline-sm text-headline-sm text-secondary mb-6">Session Governance</h2>
             <div className="mb-6">
               <div className="flex justify-between mb-2">
                 <label className="font-label-caps text-label-caps text-on-surface-variant uppercase">Auto-Logout Timer</label>

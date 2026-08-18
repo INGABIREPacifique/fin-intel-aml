@@ -136,7 +136,7 @@ export default function RiskEngineConfig() {
 
           <div className="mb-4">
             <div className="flex items-center justify-between mb-1">
-              <h2 className="font-headline-md text-headline-md text-on-surface">Multi-Market Intelligence</h2>
+              <h2 className="font-headline-md text-headline-md text-secondary">Multi-Market Intelligence</h2>
               {models.some((m) => m.is_demo) && (
                 <span className="font-data-tabular text-data-tabular text-[9px] text-on-surface-variant border border-surface-border rounded px-1.5 py-0.5">
                   MODEL PERFORMANCE: DEMO DATA
@@ -159,7 +159,7 @@ export default function RiskEngineConfig() {
                 <div className="flex items-center gap-2 mb-1">
                   <h3
                     onClick={() => navigate(`/risk-engine/${m.id}`)}
-                    className="font-headline-sm text-headline-sm text-on-surface cursor-pointer hover:text-secondary transition-colors"
+                    className="font-headline-sm text-headline-sm text-secondary cursor-pointer hover:text-secondary transition-colors"
                   >
                     {m.name}
                   </h3>
@@ -212,7 +212,7 @@ export default function RiskEngineConfig() {
             ))}
           </div>
 
-          <h2 className="font-headline-md text-headline-md text-on-surface mb-4">Market Pattern Library</h2>
+          <h2 className="font-headline-md text-headline-md text-secondary mb-4">Market Pattern Library</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
             {patterns.map((p) => (
               <div key={p.id} className="bg-surface-container-low border border-surface-border rounded p-5">
@@ -227,7 +227,7 @@ export default function RiskEngineConfig() {
 
           <div className="bg-surface-container-low border border-surface-border rounded p-6 mb-10">
             <div className="flex items-center justify-between mb-1">
-              <h2 className="font-headline-md text-headline-md text-on-surface">AI Simulation &amp; Backtesting</h2>
+              <h2 className="font-headline-md text-headline-md text-secondary">AI Simulation &amp; Backtesting</h2>
               <span className="font-data-tabular text-data-tabular text-[9px] text-on-surface-variant border border-surface-border rounded px-1.5 py-0.5">
                 SIMPLIFIED HEURISTIC — NOT A TRAINED MODEL
               </span>
@@ -302,7 +302,7 @@ export default function RiskEngineConfig() {
             )}
           </div>
 
-          <h2 className="font-headline-md text-headline-md text-on-surface mb-4">Recent Logic Updates</h2>
+          <h2 className="font-headline-md text-headline-md text-secondary mb-4">Recent Logic Updates</h2>
           <div className="bg-surface-container-high border border-surface-border rounded overflow-hidden">
             <table className="w-full">
               <thead>

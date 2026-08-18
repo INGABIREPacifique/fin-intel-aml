@@ -49,7 +49,7 @@ export default function NetworkAnalysis() {
               <span className="absolute top-6 right-6 font-data-tabular text-data-tabular text-[9px] text-on-surface-variant border border-surface-border rounded px-1.5 py-0.5">
                 DEMO DATA
               </span>
-              <h2 className="font-headline-sm text-headline-sm text-on-surface mb-4">Detected Cross-Market Anomalies</h2>
+              <h2 className="font-headline-sm text-headline-sm text-secondary mb-4">Detected Cross-Market Anomalies</h2>
               <div className="space-y-4">
                 {anomalies.map((a) => (
                   <div key={a.id} className={`bg-background border-l-4 border border-surface-border rounded p-4 ${a.severity === "high" ? "border-l-status-critical" : "border-l-status-warning"}`}>
@@ -82,7 +82,7 @@ export default function NetworkAnalysis() {
             </div>
 
             <div className="bg-surface-container border border-surface-border rounded p-6">
-              <h2 className="font-headline-sm text-headline-sm text-on-surface mb-4">Forensic Next Steps</h2>
+              <h2 className="font-headline-sm text-headline-sm text-secondary mb-4">Forensic Next Steps</h2>
               <p className="font-body-md text-body-md text-on-surface-variant mb-4">
                 Suggested actions to isolate the flagged entity cluster.
               </p>
@@ -97,7 +97,7 @@ export default function NetworkAnalysis() {
 
           {patterns.length > 0 && (
             <div className="bg-surface-container border border-surface-border rounded p-6">
-              <h2 className="font-headline-sm text-headline-sm text-on-surface mb-1">Pattern Risk Comparison</h2>
+              <h2 className="font-headline-sm text-headline-sm text-secondary mb-1">Pattern Risk Comparison</h2>
               <p className="font-body-md text-body-md text-on-surface-variant mb-4">
                 Average risk score by detected pattern, computed live from your real alert data.
               </p>

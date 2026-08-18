@@ -90,7 +90,7 @@ export default function AlertQueue() {
             onClick={() => navigate(`/cases/${alert.case_code}`)}
           >
             <div>
-              <p className="font-data-tabular text-data-tabular text-on-surface-variant mb-1">
+              <p className="font-data-tabular text-data-tabular text-data-focus mb-1">
                 {alert.case_code} · <span className="uppercase">{alert.status}</span>
               </p>
               <p className="font-body-lg text-body-lg text-on-surface font-semibold">

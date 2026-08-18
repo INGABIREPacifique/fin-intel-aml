@@ -284,7 +284,7 @@ export default function GraphExplorer() {
               </div>
 
               <div className="bg-surface-container border border-surface-border rounded p-5">
-                <h2 className="font-headline-sm text-headline-sm text-on-surface mb-3">
+                <h2 className="font-headline-sm text-headline-sm text-secondary mb-3">
                   {isAdvanced ? "Entity Inspector" : "Entity Details"}
                 </h2>
                 {!selected && <p className="font-data-tabular text-data-tabular text-on-surface-variant">Click a node to inspect.</p>}

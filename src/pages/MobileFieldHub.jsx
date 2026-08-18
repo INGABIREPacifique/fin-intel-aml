@@ -73,7 +73,7 @@ export default function MobileFieldHub() {
         </div>
 
         <div>
-          <h2 className="font-headline-sm text-headline-sm text-on-surface mb-3 border-b border-surface-border pb-2">Priority Notifications</h2>
+          <h2 className="font-headline-sm text-headline-sm text-secondary mb-3 border-b border-surface-border pb-2">Priority Notifications</h2>
           <div className="space-y-3">
             {alerts.slice(0, 6).map((a) => {
               const sev = severity(a.risk_score);
@@ -100,7 +100,7 @@ export default function MobileFieldHub() {
         </div>
 
         <div>
-          <h2 className="font-headline-sm text-headline-sm text-on-surface mb-3 border-b border-surface-border pb-2">Active Nodes</h2>
+          <h2 className="font-headline-sm text-headline-sm text-secondary mb-3 border-b border-surface-border pb-2">Active Nodes</h2>
           <div className="space-y-2">
             {institutions.map((inst) => (
               <div

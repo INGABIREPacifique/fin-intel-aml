@@ -92,7 +92,7 @@ export default function InstitutionOnboarding() {
       <div className="flex gap-4 p-8 max-w-[1200px] mx-auto w-full">
         <aside className="w-[304px] shrink-0">
           <div className="bg-surface-container border border-surface-border rounded p-6">
-            <h2 className="font-headline-sm text-headline-sm text-on-surface mb-6">Onboarding Sequence</h2>
+            <h2 className="font-headline-sm text-headline-sm text-secondary mb-6">Onboarding Sequence</h2>
             <div className="space-y-6 relative">
               <div className="absolute left-3 top-0 bottom-0 w-px bg-surface-border" />
               {STEPS.map((s) => (

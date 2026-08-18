@@ -70,7 +70,7 @@ export default function Investigations() {
                 className="p-5 flex items-center justify-between hover:bg-surface-container-high transition-colors cursor-pointer"
               >
                 <div>
-                  <p className="font-data-tabular text-data-tabular text-on-surface-variant mb-1">
+                  <p className="font-data-tabular text-data-tabular text-data-focus mb-1">
                     {c.case_code} · {c.entities?.jurisdiction}
                   </p>
                   <p className="font-body-lg text-body-lg text-on-surface font-semibold">{c.title}</p>
