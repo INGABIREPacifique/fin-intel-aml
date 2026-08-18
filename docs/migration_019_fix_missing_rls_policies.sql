@@ -6,6 +6,9 @@
 create policy "Authenticated staff can update entities" on entities
   for update using (auth.role() = 'authenticated');
 
+create policy "Authenticated staff can insert alerts" on alerts
+  for insert with check (auth.role() = 'authenticated');
+
 create policy "Officers and admins can insert institutions" on institutions
   for insert with check (
     exists (select 1 from profiles p where p.id = auth.uid() and p.role in ('compliance_officer', 'admin'))

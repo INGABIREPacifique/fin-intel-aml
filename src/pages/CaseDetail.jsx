@@ -158,7 +158,7 @@ export default function CaseDetail() {
                         y1={from.pos_y}
                         x2={to.pos_x}
                         y2={to.pos_y}
-                        stroke="#334155"
+                        stroke="var(--color-surface-border)"
                         strokeWidth="0.3"
                       />
                     );

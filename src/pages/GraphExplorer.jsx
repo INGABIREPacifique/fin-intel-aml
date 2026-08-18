@@ -229,7 +229,7 @@ export default function GraphExplorer() {
                           stroke={selected?.id === e.id ? "#ffffff" : "none"}
                           strokeWidth="2"
                         />
-                        <text y="28" textAnchor="middle" fontSize="10" fill="#c6c6cd">
+                        <text y="28" textAnchor="middle" fontSize="10" fill="var(--color-on-surface-variant)">
                           {e.entity_name.length > 18 ? e.entity_name.slice(0, 16) + "…" : e.entity_name}
                         </text>
                       </g>

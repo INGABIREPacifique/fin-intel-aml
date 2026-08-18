@@ -35,7 +35,7 @@ function PatternTrendChart({ trends }) {
             x2={width - padding}
             y1={padding + f * (height - padding * 2)}
             y2={padding + f * (height - padding * 2)}
-            stroke="#2a3548"
+            stroke="var(--color-surface-container-high)"
             strokeDasharray="4 4"
           />
         ))}
