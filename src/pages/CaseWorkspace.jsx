@@ -18,6 +18,7 @@ export default function CaseWorkspace() {
   const [loading, setLoading] = useState(true);
   const [noteText, setNoteText] = useState("");
   const [posting, setPosting] = useState(false);
+  const [attachment, setAttachment] = useState(null);
 
   const load = async () => {
     const { data: caseData } = await supabase.from("cases").select("*, entities(entity_name)").eq("case_code", caseCode).maybeSingle();
@@ -56,17 +57,27 @@ export default function CaseWorkspace() {
   };
 
   const handlePostNote = async () => {
-    if (!noteText.trim() || !caseRecord) return;
+    if (!noteText.trim() && !attachment) return;
+    if (!caseRecord) return;
     setPosting(true);
     await supabase.from("case_evidence_log").insert({
       case_id: caseRecord.id,
       author_id: session.user.id,
       body: noteText,
+      attachment_label: attachment,
     });
     setNoteText("");
+    setAttachment(null);
     setPosting(false);
     load();
   };
+
+  const handleAttach = () => {
+    const label = window.prompt("File name or reference to attach (e.g. swift_log_v2.pdf):");
+    if (label && label.trim()) setAttachment(label.trim());
+  };
+
+  const insertEmoji = (emoji) => setNoteText((prev) => prev + emoji);
 
   const toggleActionItem = async (item) => {
     await supabase.from("case_action_items").update({ done: !item.done }).eq("id", item.id);
@@ -134,38 +145,82 @@ export default function CaseWorkspace() {
               </div>
             </div>
 
-            <div className="lg:col-span-2 bg-surface-container border border-surface-border rounded p-5">
-              <h2 className="font-headline-sm text-headline-sm text-secondary mb-4">Evidence &amp; Comm Log</h2>
-              <div className="space-y-4 max-h-[400px] overflow-auto mb-4">
+            <div className="lg:col-span-2 bg-surface-container border border-surface-border rounded flex flex-col overflow-hidden">
+              <h2 className="font-headline-sm text-headline-sm text-secondary p-5 pb-4 border-b border-surface-border">Evidence &amp; Comm Log</h2>
+              <div className="flex-1 space-y-3 max-h-[420px] overflow-auto p-5">
                 {evidenceLog.length === 0 && (
                   <p className="font-data-tabular text-data-tabular text-on-surface-variant">No entries yet.</p>
                 )}
-                {evidenceLog.map((n) => (
-                  <div key={n.id} className="bg-background border border-surface-border rounded p-3">
-                    <div className="flex justify-between mb-1">
-                      <span className="font-body-md text-body-md text-on-surface font-semibold">{n.profiles?.full_name}</span>
-                      <span className="font-data-tabular text-data-tabular text-on-surface-variant">
-                        {new Date(n.created_at).toISOString().slice(0, 16).replace("T", " ")}
-                      </span>
+                {evidenceLog.map((n) => {
+                  const isOwn = n.author_id === session.user.id;
+                  const initials = n.profiles?.full_name?.split(" ").map((c) => c[0]).slice(0, 2).join("") ?? "?";
+                  return (
+                    <div key={n.id} className={`flex items-end gap-2 ${isOwn ? "justify-end" : "justify-start"}`}>
+                      {!isOwn && (
+                        <div className="w-7 h-7 rounded-full bg-surface-container-high border border-surface-border flex items-center justify-center font-label-caps text-label-caps text-secondary shrink-0">
+                          {initials}
+                        </div>
+                      )}
+                      <div className={`max-w-[75%] rounded-lg px-3 py-2 ${isOwn ? "bg-secondary/15 border border-secondary/30 rounded-br-none" : "bg-surface-container-high border border-surface-border rounded-bl-none"}`}>
+                        {!isOwn && (
+                          <p className="font-label-caps text-label-caps text-secondary mb-0.5">{n.profiles?.full_name}</p>
+                        )}
+                        {n.body && <p className="font-body-md text-body-md text-on-surface whitespace-pre-wrap">{n.body}</p>}
+                        {n.attachment_label && (
+                          <div className="flex items-center gap-1.5 mt-1.5 bg-surface-container border border-surface-border rounded px-2 py-1">
+                            <span className="material-symbols-outlined text-data-focus text-[16px]">description</span>
+                            <span className="font-data-tabular text-data-tabular text-data-focus">{n.attachment_label}</span>
+                          </div>
+                        )}
+                        <p className={`font-data-tabular text-data-tabular text-on-surface-variant mt-1 ${isOwn ? "text-right" : ""}`}>
+                          {new Date(n.created_at).toISOString().slice(11, 16)}
+                        </p>
+                      </div>
                     </div>
-                    <p className="font-body-md text-body-md text-on-surface">{n.body}</p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
-              <div className="flex gap-2">
-                <input
-                  value={noteText}
-                  onChange={(e) => setNoteText(e.target.value)}
-                  placeholder="Add evidence note..."
-                  className="flex-1 bg-primary-container border border-surface-border text-on-surface px-3 py-2 rounded text-sm focus:outline-none focus:border-data-focus"
-                />
-                <button
-                  onClick={handlePostNote}
-                  disabled={posting}
-                  className="bg-secondary text-on-secondary px-4 py-2 rounded font-label-caps text-label-caps font-semibold disabled:opacity-60"
-                >
-                  Post Note
-                </button>
+              <div className="border-t border-surface-border p-3">
+                {attachment && (
+                  <div className="flex items-center gap-2 mb-2 bg-surface-container-high border border-surface-border rounded px-2 py-1 w-fit">
+                    <span className="material-symbols-outlined text-data-focus text-[16px]">description</span>
+                    <span className="font-data-tabular text-data-tabular text-on-surface">{attachment}</span>
+                    <button onClick={() => setAttachment(null)} className="text-on-surface-variant hover:text-status-critical">
+                      <span className="material-symbols-outlined text-[14px]">close</span>
+                    </button>
+                  </div>
+                )}
+                <div className="flex items-center gap-1 mb-2">
+                  {["👍", "✅", "🚩", "❗", "📌"].map((e) => (
+                    <button
+                      key={e}
+                      onClick={() => insertEmoji(e)}
+                      className="text-lg hover:bg-surface-container-high rounded px-1.5 py-0.5 transition-colors"
+                    >
+                      {e}
+                    </button>
+                  ))}
+                  <button onClick={handleAttach} className="ml-1 p-1.5 rounded hover:bg-surface-container-high transition-colors" title="Attach file reference">
+                    <span className="material-symbols-outlined text-on-surface-variant text-[18px]">attach_file</span>
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    value={noteText}
+                    onChange={(e) => setNoteText(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handlePostNote()}
+                    placeholder="Add evidence note..."
+                    className="flex-1 bg-primary-container border border-surface-border text-on-surface px-3 py-2 rounded text-sm focus:outline-none focus:border-data-focus"
+                  />
+                  <button
+                    onClick={handlePostNote}
+                    disabled={posting}
+                    className="bg-secondary text-on-secondary px-4 py-2 rounded font-label-caps text-label-caps font-semibold disabled:opacity-60 flex items-center gap-1.5"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">send</span>
+                    Post
+                  </button>
+                </div>
               </div>
             </div>
 
