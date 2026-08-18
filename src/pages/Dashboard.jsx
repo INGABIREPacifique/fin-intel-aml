@@ -159,15 +159,17 @@ export default function Dashboard() {
               {loading ? "…" : highRiskCount}
             </p>
           </div>
-          <div className="bg-surface-container border border-surface-border p-4 rounded relative">
-            <span className="absolute top-2 right-2 font-data-tabular text-data-tabular text-[9px] text-on-surface-variant border border-surface-border rounded px-1.5 py-0.5">
-              DEMO
-            </span>
+          <div className="bg-surface-container border border-surface-border p-4 rounded">
             <div className="flex items-start justify-between mb-3">
               <p className="font-label-caps text-label-caps text-on-surface-variant uppercase">
                 False Positive Rate
               </p>
-              <span className="material-symbols-outlined text-on-surface-variant text-[18px]">query_stats</span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-data-tabular text-data-tabular text-[9px] text-on-surface-variant border border-surface-border rounded px-1.5 py-0.5">
+                  DEMO
+                </span>
+                <span className="material-symbols-outlined text-on-surface-variant text-[18px]">query_stats</span>
+              </div>
             </div>
             <p className="font-headline-lg text-headline-lg text-on-surface">
               {loading || !demoMetric ? "…" : `${demoMetric.value}%`}
