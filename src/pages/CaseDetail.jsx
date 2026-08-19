@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../lib/AuthContext";
 import Sidebar from "../components/Sidebar";
 import TopNavBar from "../components/TopNavBar";
+import WorkspaceDrawer from "../components/WorkspaceDrawer";
 
 const NODE_COLORS = {
   subject: "#ef4444",
@@ -21,6 +22,7 @@ export default function CaseDetail() {
   const [edges, setEdges] = useState([]);
   const [evidence, setEvidence] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [workspaceOpen, setWorkspaceOpen] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
 
   const load = async () => {
@@ -318,7 +320,7 @@ export default function CaseDetail() {
                   FALSE POSITIVE
                 </button>
                 <button
-                  onClick={() => navigate(`/cases/${alert.case_code}/workspace`)}
+                  onClick={() => setWorkspaceOpen(true)}
                   className="border border-secondary text-secondary rounded font-label-caps text-label-caps py-3 hover:bg-secondary/10 transition-colors"
                 >
                   WORKSPACE
@@ -334,6 +336,9 @@ export default function CaseDetail() {
           </div>
         </div>
       </div>
+      {workspaceOpen && (
+        <WorkspaceDrawer caseCode={alert.case_code} onClose={() => setWorkspaceOpen(false)} />
+      )}
     </div>
   );
 }
