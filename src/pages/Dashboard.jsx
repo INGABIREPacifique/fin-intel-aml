@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import Sidebar from "../components/Sidebar";
 import TopNavBar from "../components/TopNavBar";
+import { useAuth } from "../lib/AuthContext";
 
 function PatternTrendChart({ trends }) {
   const width = 600;
@@ -70,6 +71,10 @@ function PatternTrendChart({ trends }) {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { profile } = useAuth();
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const firstName = profile?.full_name?.split(" ")[0] ?? "";
   const [alerts, setAlerts] = useState([]);
   const [resolvedCount, setResolvedCount] = useState(0);
   const [demoMetric, setDemoMetric] = useState(null);
@@ -120,10 +125,25 @@ export default function Dashboard() {
       <div className="flex-1 flex flex-col">
         <TopNavBar />
         <main className="flex-1 p-8">
-        <h2 className="font-headline-lg text-headline-lg text-on-surface mb-2">Institutional Vault</h2>
-        <p className="font-body-md text-body-md text-on-surface-variant mb-8">
-          Executive Overview &amp; Risk Anomaly Detection
-        </p>
+        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-[#1e3a8a] to-[#0f172a] p-8 mb-8">
+          <div className="absolute -right-10 -top-10 w-56 h-56 rounded-full bg-white/5" />
+          <div className="absolute right-16 bottom-0 w-32 h-32 rounded-full bg-white/5" />
+          <div className="relative z-10 max-w-xl">
+            {profile && (
+              <span className="inline-block bg-white/10 border border-white/20 text-white font-label-caps text-label-caps px-3 py-1 rounded-full mb-4">
+                {profile.role.replace("_", " ").toUpperCase()} · {activeCount} Active Cases
+              </span>
+            )}
+            <h1 className="font-headline-lg text-headline-lg text-white mb-2">
+              {greeting}, {firstName || "there"}!
+            </h1>
+            <p className="font-body-lg text-body-lg text-white/70">
+              {highRiskCount > 0
+                ? `${highRiskCount} high-risk ${highRiskCount === 1 ? "flag needs" : "flags need"} your attention today.`
+                : "No high-risk flags right now — good time to review open cases."}
+            </p>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-surface-container border border-surface-border p-4 rounded">
