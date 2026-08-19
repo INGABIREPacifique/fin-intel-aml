@@ -36,23 +36,23 @@
 /* Light theme */
 .light {
   --color-background: #f1f5f9;
-  --color-on-background: #0f172a;
+  --color-on-background: #172554;
   --color-surface: #ffffff;
   --color-surface-variant: #e2e8f0;
-  --color-surface-border: #cbd5e1;
+  --color-surface-border: #bfdbfe;
   --color-surface-container-lowest: #ffffff;
   --color-surface-container-low: #ffffff;
   --color-surface-container: #ffffff;
-  --color-surface-container-high: #f1f5f9;
-  --color-surface-container-highest: #e2e8f0;
-  --color-on-surface: #0f172a;
-  --color-on-surface-variant: #334155;
-  --color-outline: #64748b;
-  --color-outline-variant: #cbd5e1;
+  --color-surface-container-high: #eff6ff;
+  --color-surface-container-highest: #dbeafe;
+  --color-on-surface: #172554;
+  --color-on-surface-variant: #3b5789;
+  --color-outline: #60789e;
+  --color-outline-variant: #bfdbfe;
   --color-primary: #1e3a8a;
   --color-on-primary: #ffffff;
-  --color-on-primary-fixed: #0f172a;
-  --color-primary-container: #eef2ff;
+  --color-on-primary-fixed: #172554;
+  --color-primary-container: #eff6ff;
   --color-secondary: #047857;
   --color-on-secondary: #ffffff;
   --color-error-container: #fee2e2;
@@ -64,7 +64,7 @@
 }
 
 .light [class*="bg-surface-container"] {
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 1px 2px rgba(23, 37, 84, 0.04), 0 1px 3px rgba(23, 37, 84, 0.06);
 }
 
 @layer base {
