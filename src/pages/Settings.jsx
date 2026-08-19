@@ -43,7 +43,7 @@ export default function Settings() {
           <h1 className="font-headline-lg text-headline-lg text-on-surface mb-8">Settings</h1>
 
           <div className="bg-surface-container border border-surface-border rounded p-6 mb-6">
-            <h2 className="font-headline-sm text-headline-sm text-secondary mb-4">Profile</h2>
+            <h2 className="font-headline-sm text-headline-sm text-data-focus mb-4">Profile</h2>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="font-label-caps text-label-caps text-on-surface-variant uppercase block mb-2">
@@ -55,7 +55,7 @@ export default function Settings() {
                 <label className="font-label-caps text-label-caps text-on-surface-variant uppercase block mb-2">
                   Role
                 </label>
-                <p className="font-data-tabular text-data-tabular text-secondary">
+                <p className="font-data-tabular text-data-tabular text-data-focus">
                   {profile?.role?.replace("_", " ").toUpperCase()}
                 </p>
               </div>
@@ -95,7 +95,7 @@ export default function Settings() {
           </div>
 
           <div className="bg-surface-container border border-surface-border rounded p-6">
-            <h2 className="font-headline-sm text-headline-sm text-secondary mb-4">Change Password</h2>
+            <h2 className="font-headline-sm text-headline-sm text-data-focus mb-4">Change Password</h2>
             <div className="flex gap-2">
               <input
                 type="password"

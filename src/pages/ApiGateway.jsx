@@ -105,7 +105,7 @@ export default function ApiGateway() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="lg:col-span-2 flex flex-col gap-4">
               <div className="bg-surface-container border border-surface-border rounded p-6">
-                <h2 className="font-headline-sm text-headline-sm text-secondary mb-4">Active Institutional Partners</h2>
+                <h2 className="font-headline-sm text-headline-sm text-data-focus mb-4">Active Institutional Partners</h2>
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-surface-border">
@@ -141,7 +141,7 @@ export default function ApiGateway() {
                   ILLUSTRATIVE — NO REAL WEBHOOK INFRASTRUCTURE YET
                 </span>
                 <div className="flex items-center gap-2 mb-4">
-                  <h2 className="font-headline-sm text-headline-sm text-secondary">Real-time Webhook Stream</h2>
+                  <h2 className="font-headline-sm text-headline-sm text-data-focus">Real-time Webhook Stream</h2>
                   <span className="w-2 h-2 rounded-full bg-status-success" />
                   <span className="font-data-tabular text-data-tabular text-on-surface-variant">Listening</span>
                 </div>
@@ -159,7 +159,7 @@ export default function ApiGateway() {
             </div>
 
             <div className="bg-surface-container border border-surface-border rounded p-6">
-              <h2 className="font-headline-sm text-headline-sm text-secondary mb-4">API Key Management</h2>
+              <h2 className="font-headline-sm text-headline-sm text-data-focus mb-4">API Key Management</h2>
 
               <div className="bg-surface-container-low border border-surface-border rounded p-4 mb-6">
                 <p className="font-label-caps text-label-caps text-on-surface-variant uppercase mb-3 border-b border-surface-border pb-2">

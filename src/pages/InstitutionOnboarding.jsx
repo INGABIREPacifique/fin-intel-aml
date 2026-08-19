@@ -79,7 +79,7 @@ export default function InstitutionOnboarding() {
     <div className="min-h-screen bg-primary-container text-on-surface flex flex-col">
       <header className="bg-surface-container-highest border-b border-surface-border h-16 flex items-center justify-between px-8 shrink-0">
         <div className="flex items-center gap-4">
-          <span className="font-headline-sm text-headline-sm font-bold text-secondary">FIN-INTEL AML</span>
+          <span className="font-headline-sm text-headline-sm font-bold text-data-focus">FIN-INTEL AML</span>
           <span className="border-l border-surface-border pl-4 font-label-caps text-label-caps text-on-surface-variant uppercase">
             Institution Onboarding
           </span>
@@ -92,7 +92,7 @@ export default function InstitutionOnboarding() {
       <div className="flex gap-4 p-8 max-w-[1200px] mx-auto w-full">
         <aside className="w-[304px] shrink-0">
           <div className="bg-surface-container border border-surface-border rounded p-6">
-            <h2 className="font-headline-sm text-headline-sm text-secondary mb-6">Onboarding Sequence</h2>
+            <h2 className="font-headline-sm text-headline-sm text-data-focus mb-6">Onboarding Sequence</h2>
             <div className="space-y-6 relative">
               <div className="absolute left-3 top-0 bottom-0 w-px bg-surface-border" />
               {STEPS.map((s) => (
@@ -105,7 +105,7 @@ export default function InstitutionOnboarding() {
                     {s.n}
                   </div>
                   <div>
-                    <p className={`font-body-lg text-body-lg ${step === s.n ? "text-secondary font-semibold" : "text-on-surface"}`}>{s.title}</p>
+                    <p className={`font-body-lg text-body-lg ${step === s.n ? "text-data-focus font-semibold" : "text-on-surface"}`}>{s.title}</p>
                     <p className="font-body-md text-body-md text-on-surface-variant">{s.subtitle}</p>
                   </div>
                 </div>
@@ -125,7 +125,7 @@ export default function InstitutionOnboarding() {
               {step === 1 && (
                 <>
                   <div>
-                    <p className="font-label-caps text-label-caps text-secondary uppercase border-b border-surface-border pb-2 mb-4">
+                    <p className="font-label-caps text-label-caps text-data-focus uppercase border-b border-surface-border pb-2 mb-4">
                       Institution Core Registry
                     </p>
                     <div className="grid grid-cols-1 gap-4 mb-4">
@@ -161,7 +161,7 @@ export default function InstitutionOnboarding() {
                     </div>
                   </div>
                   <div>
-                    <p className="font-label-caps text-label-caps text-secondary uppercase border-b border-surface-border pb-2 mb-4">
+                    <p className="font-label-caps text-label-caps text-data-focus uppercase border-b border-surface-border pb-2 mb-4">
                       Jurisdictional Operations
                     </p>
                     <label className="font-body-md text-body-md text-on-surface-variant block mb-2">Primary Regulatory Authority</label>
@@ -186,7 +186,7 @@ export default function InstitutionOnboarding() {
 
               {step === 2 && (
                 <div>
-                  <p className="font-label-caps text-label-caps text-secondary uppercase border-b border-surface-border pb-2 mb-4">
+                  <p className="font-label-caps text-label-caps text-data-focus uppercase border-b border-surface-border pb-2 mb-4">
                     Technical Configuration
                   </p>
                   <div className="grid grid-cols-2 gap-4">
@@ -216,7 +216,7 @@ export default function InstitutionOnboarding() {
 
               {step === 3 && (
                 <div>
-                  <p className="font-label-caps text-label-caps text-secondary uppercase border-b border-surface-border pb-2 mb-4">
+                  <p className="font-label-caps text-label-caps text-data-focus uppercase border-b border-surface-border pb-2 mb-4">
                     Review &amp; Confirm
                   </p>
                   <div className="grid grid-cols-2 gap-4 font-data-tabular text-data-tabular">

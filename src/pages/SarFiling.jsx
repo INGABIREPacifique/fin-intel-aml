@@ -164,7 +164,7 @@ export default function SarFiling() {
       <div className="max-w-3xl bg-surface-container border border-surface-border rounded p-8">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <p className="font-label-caps text-label-caps text-secondary uppercase mb-1">
+            <p className="font-label-caps text-label-caps text-data-focus uppercase mb-1">
               FinCEN Form 111 (SAR) Draft
             </p>
             <h1 className="font-headline-lg text-headline-lg text-on-surface">

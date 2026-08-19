@@ -75,7 +75,7 @@ export default function AccessPermissions() {
       <main className="flex-1 p-8">
         <div className="flex items-start justify-between border-b border-surface-border pb-6 mb-8">
           <div>
-            <p className="font-label-caps text-label-caps text-secondary uppercase mb-2">Security Hub</p>
+            <p className="font-label-caps text-label-caps text-data-focus uppercase mb-2">Security Hub</p>
             <h1 className="font-headline-lg text-headline-lg text-on-surface mb-2">Access &amp; Permissions Matrix</h1>
             <p className="font-body-md text-body-md text-on-surface-variant max-w-xl">
               Manage granular authorization levels and verify ongoing access requests across the intelligence platform.
@@ -86,7 +86,7 @@ export default function AccessPermissions() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 bg-surface-container-high border border-surface-border rounded overflow-hidden">
             <div className="bg-surface-container-low border-b border-surface-border px-6 py-4 flex items-center justify-between">
-              <h2 className="font-headline-sm text-headline-sm text-secondary">Clearance Matrix</h2>
+              <h2 className="font-headline-sm text-headline-sm text-data-focus">Clearance Matrix</h2>
               <span className="font-data-tabular text-data-tabular text-on-surface-variant text-[11px]">Click a cell to grant/revoke</span>
             </div>
             <div className="overflow-auto">
@@ -128,7 +128,7 @@ export default function AccessPermissions() {
 
           <div className="bg-surface-container-high border border-surface-border rounded p-6">
             <div className="flex items-center justify-between border-b border-surface-border pb-4 mb-4">
-              <h2 className="font-headline-sm text-headline-sm text-secondary">Pending Requests</h2>
+              <h2 className="font-headline-sm text-headline-sm text-data-focus">Pending Requests</h2>
               {pendingRequests.length > 0 && (
                 <span className="font-label-caps text-label-caps text-status-warning border border-status-warning bg-status-warning/10 rounded px-2 py-1">
                   {pendingRequests.length} Action Required

@@ -198,12 +198,12 @@ export default function WorkspacePanel({ caseCode, onClose }) {
 
       <div className="flex-1 overflow-auto p-5 grid grid-cols-1 lg:grid-cols-4 gap-4">
         <div className="bg-surface-container-low border border-surface-border rounded p-4">
-          <h2 className="font-headline-sm text-headline-sm text-secondary mb-4">Joint Task Force</h2>
+          <h2 className="font-headline-sm text-headline-sm text-data-focus mb-4">Joint Task Force</h2>
           <div className="space-y-3">
             {taskForce.length === 0 && <p className="font-data-tabular text-data-tabular text-on-surface-variant">No members yet.</p>}
             {taskForce.map((t) => (
               <div key={t.id} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-surface-container-high border border-surface-border flex items-center justify-center font-label-caps text-label-caps text-secondary">
+                <div className="w-8 h-8 rounded-full bg-surface-container-high border border-surface-border flex items-center justify-center font-label-caps text-label-caps text-data-focus">
                   {t.profiles?.full_name?.split(" ").map((n) => n[0]).slice(0, 2).join("")}
                 </div>
                 <div>
@@ -216,7 +216,7 @@ export default function WorkspacePanel({ caseCode, onClose }) {
         </div>
 
         <div className="lg:col-span-2 bg-surface-container-low border border-surface-border rounded flex flex-col overflow-hidden max-h-[600px]">
-          <h2 className="font-headline-sm text-headline-sm text-secondary p-4 pb-3 border-b border-surface-border shrink-0">Evidence &amp; Comm Log</h2>
+          <h2 className="font-headline-sm text-headline-sm text-data-focus p-4 pb-3 border-b border-surface-border shrink-0">Evidence &amp; Comm Log</h2>
           <div className="flex-1 overflow-auto p-4 space-y-3">
             {evidenceLog.length === 0 && <p className="font-data-tabular text-data-tabular text-on-surface-variant">No entries yet.</p>}
             {evidenceLog.map((n) => {
@@ -225,12 +225,12 @@ export default function WorkspacePanel({ caseCode, onClose }) {
               return (
                 <div key={n.id} className={`flex items-end gap-2 ${isOwn ? "justify-end" : "justify-start"}`}>
                   {!isOwn && (
-                    <div className="w-7 h-7 rounded-full bg-surface-container-high border border-surface-border flex items-center justify-center font-label-caps text-label-caps text-secondary shrink-0">
+                    <div className="w-7 h-7 rounded-full bg-surface-container-high border border-surface-border flex items-center justify-center font-label-caps text-label-caps text-data-focus shrink-0">
                       {initials}
                     </div>
                   )}
                   <div className={`max-w-[75%] rounded-lg px-3 py-2 ${isOwn ? "bg-secondary/15 border border-secondary/30 rounded-br-none" : "bg-surface-container-high border border-surface-border rounded-bl-none"}`}>
-                    {!isOwn && <p className="font-label-caps text-label-caps text-secondary mb-0.5">{n.profiles?.full_name}</p>}
+                    {!isOwn && <p className="font-label-caps text-label-caps text-data-focus mb-0.5">{n.profiles?.full_name}</p>}
                     {n.body && <p className="font-body-md text-body-md text-on-surface whitespace-pre-wrap">{renderBody(n.body, taskForce)}</p>}
                     {n.message_type === "voice" && n.attachment_url && (
                       <audio controls src={n.attachment_url} className="mt-1 max-w-full" />
@@ -296,7 +296,7 @@ export default function WorkspacePanel({ caseCode, onClose }) {
 
         <div className="flex flex-col gap-4">
           <div className="bg-surface-container-low border border-surface-border rounded p-4">
-            <h2 className="font-headline-sm text-headline-sm text-secondary mb-4">Key Milestones</h2>
+            <h2 className="font-headline-sm text-headline-sm text-data-focus mb-4">Key Milestones</h2>
             <div className="space-y-3">
               {milestones.map((m) => (
                 <div key={m.id} className="flex gap-3">
@@ -312,7 +312,7 @@ export default function WorkspacePanel({ caseCode, onClose }) {
           </div>
 
           <div className="bg-surface-container-low border border-surface-border rounded p-4">
-            <h2 className="font-headline-sm text-headline-sm text-secondary mb-4">Action Items</h2>
+            <h2 className="font-headline-sm text-headline-sm text-data-focus mb-4">Action Items</h2>
             <div className="space-y-3">
               {actionItems.map((a) => (
                 <label key={a.id} className="flex items-start gap-2">

@@ -204,7 +204,7 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <div className="bg-surface-container border border-surface-border rounded p-5 md:col-span-1">
-            <h3 className="font-headline-sm text-headline-sm text-secondary mb-1">Risk Distribution</h3>
+            <h3 className="font-headline-sm text-headline-sm text-data-focus mb-1">Risk Distribution</h3>
             <p className="font-data-tabular text-data-tabular text-on-surface-variant mb-6">
               Distribution of flags by severity
             </p>
@@ -236,7 +236,7 @@ export default function Dashboard() {
             <span className="absolute top-5 right-5 font-data-tabular text-data-tabular text-[9px] text-on-surface-variant border border-surface-border rounded px-1.5 py-0.5">
               DEMO DATA
             </span>
-            <h3 className="font-headline-sm text-headline-sm text-secondary mb-1">Laundering Pattern Detection</h3>
+            <h3 className="font-headline-sm text-headline-sm text-data-focus mb-1">Laundering Pattern Detection</h3>
             <p className="font-data-tabular text-data-tabular text-on-surface-variant mb-4">
               Structuring, Circular Flows, and Rapid Pass-Through trends
             </p>
@@ -246,7 +246,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <h3 className="font-headline-sm text-headline-sm text-secondary mb-4">Alert Queue</h3>
+        <h3 className="font-headline-sm text-headline-sm text-data-focus mb-4">Alert Queue</h3>
         <div className="bg-surface-container border border-surface-border rounded divide-y divide-surface-border">
           {loading && (
             <p className="p-6 font-data-tabular text-data-tabular text-on-surface-variant">

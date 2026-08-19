@@ -30,7 +30,7 @@ export default function Sidebar() {
     <aside className="w-[240px] bg-surface-container-low border-r border-surface-border p-4 flex flex-col gap-4 min-h-screen shrink-0">
       <div className="flex items-center gap-3 px-2 pb-6">
         <div className="w-9 h-10 bg-primary-container border border-surface-border rounded flex items-center justify-center shrink-0">
-          <span className="material-symbols-outlined text-secondary text-[20px]">shield_locked</span>
+          <span className="material-symbols-outlined text-data-focus text-[20px]">shield_locked</span>
         </div>
         <div>
           <h1 className="font-headline-md text-headline-md font-semibold text-on-surface leading-tight">
@@ -43,7 +43,7 @@ export default function Sidebar() {
       </div>
 
       {profile && (
-        <p className="font-data-tabular text-data-tabular text-secondary px-2 -mt-2">
+        <p className="font-data-tabular text-data-tabular text-data-focus px-2 -mt-2">
           {profile.full_name} · {profile.role.replace("_", " ").toUpperCase()}
         </p>
       )}
@@ -64,7 +64,7 @@ export default function Sidebar() {
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2 rounded transition-colors ${
                 isActive
-                  ? "bg-primary-container border-r-2 border-secondary text-secondary"
+                  ? "bg-primary-container border-r-2 border-data-focus text-data-focus"
                   : "text-on-surface-variant hover:text-on-surface"
               }`
             }

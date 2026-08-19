@@ -44,7 +44,7 @@ export default function MobileFieldHub() {
     <div className="min-h-screen bg-background text-on-surface max-w-[430px] mx-auto relative pb-24 pt-16">
       <header className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-background border-b border-surface-border h-16 flex items-center justify-between px-4 z-20">
         <div className="flex items-center gap-3">
-          <span className="material-symbols-outlined text-secondary text-[20px]">shield_locked</span>
+          <span className="material-symbols-outlined text-data-focus text-[20px]">shield_locked</span>
           <h1 className="font-headline-sm text-headline-sm font-bold text-on-surface">Investigation Hub</h1>
         </div>
         <span className="material-symbols-outlined text-on-surface-variant">search</span>
@@ -73,7 +73,7 @@ export default function MobileFieldHub() {
         </div>
 
         <div>
-          <h2 className="font-headline-sm text-headline-sm text-secondary mb-3 border-b border-surface-border pb-2">Priority Notifications</h2>
+          <h2 className="font-headline-sm text-headline-sm text-data-focus mb-3 border-b border-surface-border pb-2">Priority Notifications</h2>
           <div className="space-y-3">
             {alerts.slice(0, 6).map((a) => {
               const sev = severity(a.risk_score);
@@ -100,7 +100,7 @@ export default function MobileFieldHub() {
         </div>
 
         <div>
-          <h2 className="font-headline-sm text-headline-sm text-secondary mb-3 border-b border-surface-border pb-2">Active Nodes</h2>
+          <h2 className="font-headline-sm text-headline-sm text-data-focus mb-3 border-b border-surface-border pb-2">Active Nodes</h2>
           <div className="space-y-2">
             {institutions.map((inst) => (
               <div

@@ -288,7 +288,7 @@ export default function CaseDetail() {
                         <td className="px-3 py-3 font-data-tabular text-data-tabular text-on-surface-variant whitespace-nowrap">
                           {new Date(e.occurred_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                         </td>
-                        <td className="px-3 py-3 font-data-tabular text-data-tabular text-secondary">{e.source}</td>
+                        <td className="px-3 py-3 font-data-tabular text-data-tabular text-data-focus">{e.source}</td>
                         <td className="px-3 py-3 font-data-tabular text-data-tabular text-on-surface">{e.record}</td>
                       </tr>
                     ))}
@@ -299,7 +299,7 @@ export default function CaseDetail() {
 
             <div className="border-t border-surface-border p-4 sticky bottom-0 bg-background">
               {caseRecord?.assigned_to && (
-                <p className="font-data-tabular text-data-tabular text-secondary mb-2">
+                <p className="font-data-tabular text-data-tabular text-data-focus mb-2">
                   Assigned to: {caseRecord.profiles?.full_name ?? "—"}
                 </p>
               )}

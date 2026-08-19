@@ -56,7 +56,7 @@ export default function MobileAlertDetail() {
         <button onClick={() => navigate("/mobile")}>
           <span className="material-symbols-outlined text-on-surface-variant">arrow_back</span>
         </button>
-        <h1 className="font-headline-sm text-headline-sm text-secondary truncate">{alert.case_code}</h1>
+        <h1 className="font-headline-sm text-headline-sm text-data-focus truncate">{alert.case_code}</h1>
       </header>
 
       <main className="p-4 space-y-4">

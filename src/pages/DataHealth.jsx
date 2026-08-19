@@ -103,7 +103,7 @@ export default function DataHealth() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
             <div className="lg:col-span-2 bg-surface-container-high border border-surface-border rounded p-6 relative">
               <div className="flex items-center justify-between border-b border-surface-border pb-4 mb-4">
-                <h2 className="font-headline-sm text-headline-sm text-secondary">Ingestion Pipeline Status</h2>
+                <h2 className="font-headline-sm text-headline-sm text-data-focus">Ingestion Pipeline Status</h2>
                 <span className="font-data-tabular text-data-tabular text-[9px] text-on-surface-variant border border-surface-border rounded px-1.5 py-0.5">ILLUSTRATIVE</span>
               </div>
               <div className="flex justify-between items-center py-8">
@@ -125,11 +125,11 @@ export default function DataHealth() {
 
             <div className="bg-surface-container-high border border-surface-border rounded p-6">
               <div className="flex items-center justify-between border-b border-surface-border pb-4 mb-4">
-                <h2 className="font-headline-sm text-headline-sm text-secondary">Active Integration Feeds</h2>
+                <h2 className="font-headline-sm text-headline-sm text-data-focus">Active Integration Feeds</h2>
                 <button
                   onClick={handleSyncNow}
                   disabled={syncing}
-                  className="font-label-caps text-label-caps text-secondary flex items-center gap-1 disabled:opacity-60"
+                  className="font-label-caps text-label-caps text-data-focus flex items-center gap-1 disabled:opacity-60"
                 >
                   <span className="material-symbols-outlined text-[14px]">sync</span>
                   {syncing ? "Syncing..." : "Sync Now"}
@@ -164,7 +164,7 @@ export default function DataHealth() {
 
           <div className="bg-surface-container-high border border-surface-border rounded p-6 relative">
             <span className="absolute top-6 right-6 font-data-tabular text-data-tabular text-[9px] text-on-surface-variant border border-surface-border rounded px-1.5 py-0.5">DEMO DATA</span>
-            <h2 className="font-headline-sm text-headline-sm text-secondary mb-1">Entity Resolution Audit</h2>
+            <h2 className="font-headline-sm text-headline-sm text-data-focus mb-1">Entity Resolution Audit</h2>
             <p className="font-body-md text-body-md text-on-surface-variant mb-4">
               Recent high-confidence linkages across independent schemas.
             </p>

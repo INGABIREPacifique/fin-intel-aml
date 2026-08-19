@@ -23,7 +23,7 @@ export default function AdminSidebar() {
       <div>
         <div className="flex flex-col items-center px-6 pb-8">
           <div className="w-16 h-16 rounded-full border border-surface-border bg-surface-container-high flex items-center justify-center mb-2">
-            <span className="material-symbols-outlined text-secondary text-[28px]">admin_panel_settings</span>
+            <span className="material-symbols-outlined text-data-focus text-[28px]">admin_panel_settings</span>
           </div>
           <h2 className="font-headline-sm text-headline-sm text-on-surface">Admin Console</h2>
           <p className="font-label-caps text-label-caps text-on-surface-variant text-center mt-1">
@@ -38,7 +38,7 @@ export default function AdminSidebar() {
               className={({ isActive }) =>
                 `flex items-center px-4 py-3 rounded font-label-caps text-label-caps transition-colors ${
                   isActive
-                    ? "bg-surface-container-high border-r-2 border-secondary text-secondary font-bold"
+                    ? "bg-surface-container-high border-r-2 border-data-focus text-data-focus font-bold"
                     : "text-on-surface-variant hover:text-on-surface"
                 }`
               }

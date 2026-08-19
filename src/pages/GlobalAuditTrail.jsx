@@ -131,7 +131,7 @@ export default function GlobalAuditTrail() {
                         <td className="px-4 py-3 font-data-tabular text-data-tabular text-on-surface">
                           {e.action.replace(/_/g, " ")}
                         </td>
-                        <td className="px-4 py-3 font-data-tabular text-data-tabular text-secondary">
+                        <td className="px-4 py-3 font-data-tabular text-data-tabular text-data-focus">
                           {e.profiles?.full_name ?? "SYSTEM"}
                         </td>
                         <td className="px-4 py-3 font-data-tabular text-data-tabular text-on-surface">
@@ -150,7 +150,7 @@ export default function GlobalAuditTrail() {
             </div>
 
             <div className="bg-surface-container border border-surface-border rounded p-5">
-              <h2 className="font-headline-sm text-headline-sm text-secondary mb-4">Event Inspector</h2>
+              <h2 className="font-headline-sm text-headline-sm text-data-focus mb-4">Event Inspector</h2>
               {!selected && (
                 <p className="font-data-tabular text-data-tabular text-on-surface-variant">
                   Select an event from the table.
@@ -174,7 +174,7 @@ export default function GlobalAuditTrail() {
                       <p className="font-label-caps text-label-caps text-on-surface-variant uppercase mb-1">
                         Operator
                       </p>
-                      <p className="font-data-tabular text-data-tabular text-secondary">
+                      <p className="font-data-tabular text-data-tabular text-data-focus">
                         {selected.profiles?.full_name ?? "SYSTEM"}
                       </p>
                     </div>

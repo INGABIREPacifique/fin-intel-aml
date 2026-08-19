@@ -168,7 +168,7 @@ export default function InstitutionProfile() {
                   Last Audit: {institution.last_audit_date}
                 </span>
                 {institution.next_audit_date && (
-                  <span className="font-data-tabular text-data-tabular text-secondary">
+                  <span className="font-data-tabular text-data-tabular text-data-focus">
                     Next Audit: {institution.next_audit_date}
                   </span>
                 )}
@@ -198,7 +198,7 @@ export default function InstitutionProfile() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
             <div className="lg:col-span-2 bg-surface-container border border-surface-border rounded overflow-hidden">
               <div className="bg-surface-container-low border-b border-surface-border px-5 py-4">
-                <h2 className="font-headline-sm text-headline-sm text-secondary">
+                <h2 className="font-headline-sm text-headline-sm text-data-focus">
                   Data Integrity &amp; Audit Metrics
                 </h2>
               </div>
@@ -232,7 +232,7 @@ export default function InstitutionProfile() {
 
             <div className="bg-surface-container border border-surface-border rounded overflow-hidden">
               <div className="bg-surface-container-low border-b border-surface-border px-5 py-4">
-                <h2 className="font-headline-sm text-headline-sm text-secondary">Legal Frameworks</h2>
+                <h2 className="font-headline-sm text-headline-sm text-data-focus">Legal Frameworks</h2>
               </div>
               <div className="divide-y divide-surface-border max-h-[260px] overflow-auto">
                 {agreements.length === 0 && (
@@ -266,7 +266,7 @@ export default function InstitutionProfile() {
 
           <div className="bg-surface-container border border-surface-border rounded overflow-hidden">
             <div className="bg-surface-container-low border-b border-surface-border px-5 py-4 flex items-center justify-between">
-              <h2 className="font-headline-sm text-headline-sm text-secondary">Administrative Audit Trail</h2>
+              <h2 className="font-headline-sm text-headline-sm text-data-focus">Administrative Audit Trail</h2>
             </div>
             <div className="overflow-auto">
               <table className="w-full">

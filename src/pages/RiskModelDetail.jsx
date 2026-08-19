@@ -128,7 +128,7 @@ export default function RiskModelDetail() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
             <div className="bg-surface-container border border-surface-border rounded p-6">
-              <h2 className="font-headline-sm text-headline-sm text-secondary mb-4">Model Parameters</h2>
+              <h2 className="font-headline-sm text-headline-sm text-data-focus mb-4">Model Parameters</h2>
               <div className="space-y-6">
                 <div>
                   <div className="flex justify-between mb-1">
@@ -166,7 +166,7 @@ export default function RiskModelDetail() {
 
             <div className="lg:col-span-2 bg-surface-container border border-surface-border rounded p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="font-headline-sm text-headline-sm text-secondary">Impact Simulation (Simplified Heuristic)</h2>
+                <h2 className="font-headline-sm text-headline-sm text-data-focus">Impact Simulation (Simplified Heuristic)</h2>
                 <div className="flex gap-2">
                   <button onClick={handleReset} className="border border-outline text-on-surface px-4 py-2 rounded font-label-caps text-label-caps">Reset</button>
                   <button onClick={handlePreview} className="border border-secondary text-secondary px-4 py-2 rounded font-label-caps text-label-caps">Preview</button>
@@ -196,7 +196,7 @@ export default function RiskModelDetail() {
 
           <div className="bg-surface-container border border-surface-border rounded overflow-hidden">
             <div className="bg-surface-container-low border-b border-surface-border px-5 py-4">
-              <h2 className="font-headline-sm text-headline-sm text-secondary">Configuration Audit Trail</h2>
+              <h2 className="font-headline-sm text-headline-sm text-data-focus">Configuration Audit Trail</h2>
             </div>
             <div className="overflow-auto max-h-[300px]">
               {auditEntries.length === 0 && (
@@ -205,7 +205,7 @@ export default function RiskModelDetail() {
               {auditEntries.map((e) => (
                 <div key={e.id} className="px-5 py-3 border-b border-surface-border">
                   <div className="flex justify-between mb-1">
-                    <span className="font-data-tabular text-data-tabular text-secondary">{e.profiles?.full_name ?? "SYSTEM"}</span>
+                    <span className="font-data-tabular text-data-tabular text-data-focus">{e.profiles?.full_name ?? "SYSTEM"}</span>
                     <span className="font-data-tabular text-data-tabular text-on-surface-variant">
                       {new Date(e.created_at).toISOString().slice(0, 16).replace("T", " ")}
                     </span>

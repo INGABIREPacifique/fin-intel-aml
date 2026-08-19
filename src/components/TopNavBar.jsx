@@ -184,7 +184,7 @@ export default function TopNavBar() {
             className="w-8 h-8 rounded-full bg-surface-container-high border border-surface-border flex items-center justify-center"
             title={`${profile.full_name} — ${profile.role.replace("_", " ")}`}
           >
-            <span className="font-label-caps text-label-caps text-secondary">
+            <span className="font-label-caps text-label-caps text-data-focus">
               {profile.full_name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
             </span>
           </button>

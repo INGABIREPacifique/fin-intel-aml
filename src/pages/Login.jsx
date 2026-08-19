@@ -49,13 +49,13 @@ export default function Login() {
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-16">
               <div className="w-10 h-10 bg-primary-container border border-surface-border flex items-center justify-center">
-                <span className="material-symbols-outlined text-secondary text-[24px]">
+                <span className="material-symbols-outlined text-data-focus text-[24px]">
                   shield_locked
                 </span>
               </div>
               <div>
                 <h1 className="font-headline-md text-headline-md font-bold tracking-tighter text-on-surface">
-                  FIN-INTEL <span className="text-secondary">AML</span>
+                  FIN-INTEL <span className="text-data-focus">AML</span>
                 </h1>
                 <p className="font-data-tabular text-data-tabular text-on-surface-variant text-[11px] uppercase tracking-widest mt-1">
                   Institutional Intelligence System
