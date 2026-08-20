@@ -33,17 +33,17 @@ export default function Sidebar() {
           <span className="material-symbols-outlined text-white text-[20px]">shield_locked</span>
         </div>
         <div>
-          <h1 className="font-headline-md text-headline-md font-semibold text-white leading-tight">
+          <h1 className="font-headline-md text-headline-md font-bold text-white leading-tight">
             AML Division
           </h1>
-          <p className="font-data-tabular text-data-tabular text-white/60 leading-tight">
+          <p className="font-data-tabular text-data-tabular text-white/75 leading-tight">
             Institutional Vault
           </p>
         </div>
       </div>
 
       {profile && (
-        <p className="font-data-tabular text-data-tabular text-white/80 px-2 -mt-2">
+        <p className="font-data-tabular text-data-tabular font-semibold text-white px-2 -mt-2">
           {profile.full_name} · {profile.role.replace("_", " ").toUpperCase()}
         </p>
       )}
@@ -64,8 +64,8 @@ export default function Sidebar() {
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2 rounded transition-colors ${
                 isActive
-                  ? "bg-white/15 border-r-2 border-white text-white"
-                  : "text-white/60 hover:text-white hover:bg-white/5"
+                  ? "bg-white/15 border-r-2 border-white text-white font-bold"
+                  : "text-white/85 font-semibold hover:text-white hover:bg-white/5"
               }`
             }
           >

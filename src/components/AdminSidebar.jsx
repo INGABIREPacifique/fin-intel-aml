@@ -25,8 +25,8 @@ export default function AdminSidebar() {
           <div className="w-16 h-16 rounded-full border border-white/20 bg-white/10 flex items-center justify-center mb-2">
             <span className="material-symbols-outlined text-white text-[28px]">admin_panel_settings</span>
           </div>
-          <h2 className="font-headline-sm text-headline-sm text-white">Admin Console</h2>
-          <p className="font-label-caps text-label-caps text-white/60 text-center mt-1">
+          <h2 className="font-headline-sm text-headline-sm font-bold text-white">Admin Console</h2>
+          <p className="font-label-caps text-label-caps text-white/75 text-center mt-1">
             REGULATORY CONTROL
           </p>
         </div>
@@ -39,7 +39,7 @@ export default function AdminSidebar() {
                 `flex items-center px-4 py-3 rounded font-label-caps text-label-caps transition-colors ${
                   isActive
                     ? "bg-white/15 border-r-2 border-white text-white font-bold"
-                    : "text-white/60 hover:text-white hover:bg-white/5"
+                    : "text-white/85 font-semibold hover:text-white hover:bg-white/5"
                 }`
               }
             >

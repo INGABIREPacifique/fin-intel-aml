@@ -235,7 +235,7 @@ export default function CaseDetail() {
                   </span>
                 </div>
                 {alert.narrative && (
-                  <p className="font-body-md text-body-md text-on-surface-variant">{alert.narrative}</p>
+                  <p className="font-body-md text-body-md text-on-surface font-medium">{alert.narrative}</p>
                 )}
                 {alert.funds_in && (
                   <div className="flex gap-6 pt-2">
