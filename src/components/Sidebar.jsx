@@ -27,23 +27,23 @@ export default function Sidebar() {
   const visibleItems = profile ? navItems.filter((item) => item.roles.includes(profile.role)) : [];
 
   return (
-    <aside className="w-[240px] bg-surface-container-low border-r border-surface-border p-4 flex flex-col gap-4 min-h-screen shrink-0">
+    <aside className="w-[240px] bg-gradient-to-b from-[#1e3a8a] to-[#0f172a] p-4 flex flex-col gap-4 min-h-screen shrink-0">
       <div className="flex items-center gap-3 px-2 pb-6">
-        <div className="w-9 h-10 bg-primary-container border border-surface-border rounded flex items-center justify-center shrink-0">
-          <span className="material-symbols-outlined text-data-focus text-[20px]">shield_locked</span>
+        <div className="w-9 h-10 bg-white/10 border border-white/20 rounded flex items-center justify-center shrink-0">
+          <span className="material-symbols-outlined text-white text-[20px]">shield_locked</span>
         </div>
         <div>
-          <h1 className="font-headline-md text-headline-md font-semibold text-on-surface leading-tight">
+          <h1 className="font-headline-md text-headline-md font-semibold text-white leading-tight">
             AML Division
           </h1>
-          <p className="font-data-tabular text-data-tabular text-on-surface-variant leading-tight">
+          <p className="font-data-tabular text-data-tabular text-white/60 leading-tight">
             Institutional Vault
           </p>
         </div>
       </div>
 
       {profile && (
-        <p className="font-data-tabular text-data-tabular text-data-focus px-2 -mt-2">
+        <p className="font-data-tabular text-data-tabular text-white/80 px-2 -mt-2">
           {profile.full_name} · {profile.role.replace("_", " ").toUpperCase()}
         </p>
       )}
@@ -64,8 +64,8 @@ export default function Sidebar() {
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2 rounded transition-colors ${
                 isActive
-                  ? "bg-primary-container border-r-2 border-data-focus text-data-focus"
-                  : "text-on-surface-variant hover:text-on-surface"
+                  ? "bg-white/15 border-r-2 border-white text-white"
+                  : "text-white/60 hover:text-white hover:bg-white/5"
               }`
             }
           >
@@ -75,17 +75,17 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <div className="border-t border-surface-border pt-4 space-y-1">
+      <div className="border-t border-white/15 pt-4 space-y-1">
         <button
           onClick={() => navigate("/settings")}
-          className="w-full flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface rounded transition-colors"
+          className="w-full flex items-center gap-3 px-3 py-2 text-white/60 hover:text-white rounded transition-colors"
         >
           <span className="material-symbols-outlined text-[18px]">settings</span>
           <span className="font-label-caps text-label-caps">Settings</span>
         </button>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-status-critical rounded transition-colors"
+          className="w-full flex items-center gap-3 px-3 py-2 text-white/60 hover:text-red-300 rounded transition-colors"
         >
           <span className="material-symbols-outlined text-[18px]">logout</span>
           <span className="font-label-caps text-label-caps">Logout</span>
