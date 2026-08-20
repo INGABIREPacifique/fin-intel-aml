@@ -203,7 +203,7 @@ export default function CaseDetail() {
             </div>
           </div>
 
-          <div className="w-[416px] flex flex-col shrink-0 overflow-y-auto">
+          <div className="w-[416px] flex flex-col shrink-0 overflow-y-auto bg-primary-container">
             <div className="border-b border-surface-border px-6 py-6 flex items-start justify-between">
               <div>
                 <h2 className="font-headline-md text-headline-md text-on-surface mb-2">
