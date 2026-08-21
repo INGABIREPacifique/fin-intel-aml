@@ -72,7 +72,7 @@ export default function AccessPermissions() {
   return (
     <div className="min-h-screen bg-background text-on-surface flex">
       <AdminSidebar />
-      <main className="flex-1 p-8">
+      <main className="flex-1 p-4 md:p-8 overflow-x-hidden">
         <div className="flex items-start justify-between border-b border-surface-border pb-6 mb-8">
           <div>
             <p className="font-label-caps text-label-caps text-data-focus uppercase mb-2">Security Hub</p>

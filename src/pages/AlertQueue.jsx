@@ -40,7 +40,7 @@ export default function AlertQueue() {
       <Sidebar />
       <div className="flex-1 flex flex-col">
         <TopNavBar />
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-4 md:p-8 overflow-x-hidden">
       <div className="flex items-center justify-between mb-2">
         <h1 className="font-headline-lg text-headline-lg text-on-surface">Alert Queue</h1>
       </div>

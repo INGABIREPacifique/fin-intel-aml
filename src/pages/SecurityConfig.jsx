@@ -65,7 +65,7 @@ export default function SecurityConfig() {
   return (
     <div className="min-h-screen bg-background text-on-surface flex">
       <AdminSidebar />
-      <main className="flex-1 p-8">
+      <main className="flex-1 p-4 md:p-8 overflow-x-hidden">
         <h1 className="font-headline-lg text-headline-lg text-on-surface mb-2">Security Configuration</h1>
         <p className="font-body-md text-body-md text-on-surface-variant mb-8">
           Global parameters and access control management for FIN-INTEL AML instances.

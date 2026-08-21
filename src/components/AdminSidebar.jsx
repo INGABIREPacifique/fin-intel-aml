@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/AuthContext";
+import { useMobileNav } from "../lib/MobileNavContext";
 
 const adminNavItems = [
   { to: "/admin/general", label: "General" },
@@ -12,6 +13,7 @@ const adminNavItems = [
 export default function AdminSidebar() {
   const { signOut } = useAuth();
   const navigate = useNavigate();
+  const { isOpen, close } = useMobileNav();
 
   const handleLogout = async () => {
     await signOut();
@@ -19,7 +21,13 @@ export default function AdminSidebar() {
   };
 
   return (
-    <aside className="w-[240px] bg-gradient-to-b from-[#1e3a8a] to-[#0f172a] py-4 flex flex-col justify-between min-h-screen shrink-0">
+    <>
+      {isOpen && <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={close} />}
+      <aside
+        className={`w-[240px] bg-gradient-to-b from-[#1e3a8a] to-[#0f172a] py-4 flex flex-col justify-between min-h-screen shrink-0 fixed md:static inset-y-0 left-0 z-50 transition-transform duration-200 ${
+          isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        }`}
+      >
       <div>
         <div className="flex flex-col items-center px-6 pb-8">
           <div className="w-16 h-16 rounded-full border border-white/20 bg-white/10 flex items-center justify-center mb-2">
@@ -63,6 +71,7 @@ export default function AdminSidebar() {
           Logout
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }

@@ -71,7 +71,7 @@ export default function DataHealth() {
       <Sidebar />
       <div className="flex-1 flex flex-col">
         <TopNavBar />
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-4 md:p-8 overflow-x-hidden">
           <h1 className="font-headline-lg text-headline-lg text-on-surface mb-2">Data Health &amp; Ingestion Monitor</h1>
           <p className="font-body-md text-body-md text-on-surface-variant mb-8">
             Real-time surveillance of system-wide data integrity, schema normalization, and entity resolution pipelines.

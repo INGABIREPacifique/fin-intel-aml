@@ -152,7 +152,7 @@ export default function SarFiling() {
       <Sidebar />
       <div className="flex-1 flex flex-col">
         <TopNavBar />
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-4 md:p-8 overflow-x-hidden">
       <button
         onClick={() => navigate(`/cases/${caseCode}`)}
         className="flex items-center gap-2 text-on-surface-variant hover:text-on-surface mb-6 font-body-md text-body-md"

@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/AuthContext";
+import { useMobileNav } from "../lib/MobileNavContext";
 
 const navItems = [
   { to: "/dashboard", label: "Overview", icon: "grid_view", roles: ["investigator", "compliance_officer", "admin"] },
@@ -18,6 +19,7 @@ const navItems = [
 export default function Sidebar() {
   const { signOut, profile } = useAuth();
   const navigate = useNavigate();
+  const { isOpen, close } = useMobileNav();
 
   const handleLogout = async () => {
     await signOut();
@@ -27,7 +29,15 @@ export default function Sidebar() {
   const visibleItems = profile ? navItems.filter((item) => item.roles.includes(profile.role)) : [];
 
   return (
-    <aside className="w-[240px] bg-gradient-to-b from-[#1e3a8a] to-[#0f172a] p-4 flex flex-col gap-4 min-h-screen shrink-0">
+    <>
+      {isOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={close} />
+      )}
+      <aside
+        className={`w-[240px] bg-gradient-to-b from-[#1e3a8a] to-[#0f172a] p-4 flex flex-col gap-4 min-h-screen shrink-0 fixed md:static inset-y-0 left-0 z-50 transition-transform duration-200 ${
+          isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        }`}
+      >
       <div className="flex items-center gap-3 px-2 pb-6">
         <div className="w-9 h-10 bg-white/10 border border-white/20 rounded flex items-center justify-center shrink-0">
           <span className="material-symbols-outlined text-white text-[20px]">shield_locked</span>
@@ -61,6 +71,7 @@ export default function Sidebar() {
           <NavLink
             key={item.to}
             to={item.to}
+            onClick={close}
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2 rounded transition-colors ${
                 isActive
@@ -91,6 +102,7 @@ export default function Sidebar() {
           <span className="font-label-caps text-label-caps">Logout</span>
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }

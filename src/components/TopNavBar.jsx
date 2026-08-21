@@ -3,10 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../lib/AuthContext";
 import { useTheme } from "../lib/ThemeContext";
+import { useMobileNav } from "../lib/MobileNavContext";
 
 export default function TopNavBar() {
   const { profile } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { toggle } = useMobileNav();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -75,9 +77,14 @@ export default function TopNavBar() {
   };
 
   return (
-    <header className="bg-background border-b border-surface-border h-16 flex items-center justify-between px-8 shrink-0">
-      <h1 className="font-body-lg text-body-lg font-bold text-on-surface">FIN-INTELLIGENCE</h1>
-      <div className="flex-1 max-w-[448px] mx-8 relative" ref={searchRef}>
+    <header className="bg-background border-b border-surface-border h-16 flex items-center justify-between px-4 md:px-8 shrink-0">
+      <div className="flex items-center gap-3">
+        <button onClick={toggle} className="md:hidden p-2 -ml-2 rounded hover:bg-surface-container-high">
+          <span className="material-symbols-outlined text-on-surface text-[22px]">menu</span>
+        </button>
+        <h1 className="hidden sm:block font-body-lg text-body-lg font-bold text-on-surface">FIN-INTELLIGENCE</h1>
+      </div>
+      <div className="flex-1 max-w-[448px] mx-2 sm:mx-8 relative" ref={searchRef}>
         <div className="relative">
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[16px]">
             search
@@ -87,10 +94,10 @@ export default function TopNavBar() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setSearchOpen(true)}
-            placeholder="Search entities, cases..."
-            className="w-full bg-primary-container border border-surface-border text-on-surface text-sm pl-9 pr-16 py-2 rounded focus:outline-none focus:border-data-focus"
+            placeholder="Search..."
+            className="w-full bg-primary-container border border-surface-border text-on-surface text-sm pl-9 pr-4 sm:pr-16 py-2 rounded focus:outline-none focus:border-data-focus"
           />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 bg-surface-container border border-surface-border text-on-surface-variant text-[10px] font-data-tabular px-2 py-0.5 rounded">
+          <span className="hidden sm:block absolute right-3 top-1/2 -translate-y-1/2 bg-surface-container border border-surface-border text-on-surface-variant text-[10px] font-data-tabular px-2 py-0.5 rounded">
             CMD+K
           </span>
         </div>

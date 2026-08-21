@@ -124,7 +124,7 @@ export default function Dashboard() {
 
       <div className="flex-1 flex flex-col">
         <TopNavBar />
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-4 md:p-8 overflow-x-hidden">
         <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-[#1e3a8a] to-[#0f172a] p-8 mb-8">
           <div className="absolute -right-10 -top-10 w-56 h-56 rounded-full bg-white/5" />
           <div className="absolute right-16 bottom-0 w-32 h-32 rounded-full bg-white/5" />

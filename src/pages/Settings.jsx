@@ -39,7 +39,7 @@ export default function Settings() {
       <Sidebar />
       <div className="flex-1 flex flex-col">
         <TopNavBar />
-        <main className="flex-1 p-8 max-w-2xl">
+        <main className="flex-1 p-4 md:p-8 max-w-2xl overflow-x-hidden">
           <h1 className="font-headline-lg text-headline-lg text-on-surface mb-8">Settings</h1>
 
           <div className="bg-surface-container border border-surface-border rounded p-6 mb-6">
