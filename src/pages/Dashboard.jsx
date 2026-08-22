@@ -89,7 +89,7 @@ export default function Dashboard() {
         { data: metricData },
         { data: trendData },
       ] = await Promise.all([
-        supabase.from("alerts").select("*, entities(entity_name)").order("risk_score", { ascending: false }),
+        supabase.from("alerts").select("*, entities(entity_name, jurisdiction)").order("risk_score", { ascending: false }),
         supabase.from("cases").select("*", { count: "exact", head: true }).eq("status", "resolved"),
         supabase.from("demo_metrics").select("*").eq("key", "false_positive_rate").maybeSingle(),
         supabase.from("demo_pattern_trends").select("*").order("week_order", { ascending: true }),
@@ -104,6 +104,21 @@ export default function Dashboard() {
   }, []);
 
   const highRiskCount = alerts.filter((a) => a.risk_score >= 90).length;
+
+  // Real jurisdictional risk ranking, computed live from actual alert data
+  const jurisdictionMap = {};
+  alerts.forEach((a) => {
+    const j = a.entities?.jurisdiction;
+    if (!j) return;
+    if (!jurisdictionMap[j]) jurisdictionMap[j] = { count: 0, totalRisk: 0, volume: 0 };
+    jurisdictionMap[j].count += 1;
+    jurisdictionMap[j].totalRisk += a.risk_score;
+    jurisdictionMap[j].volume += Number(a.volume ?? 0);
+  });
+  const jurisdictionRisk = Object.entries(jurisdictionMap)
+    .map(([name, d]) => ({ name, count: d.count, avgRisk: Math.round(d.totalRisk / d.count), volume: d.volume }))
+    .sort((a, b) => b.avgRisk - a.avgRisk);
+  const maxJurisdictionRisk = Math.max(1, ...jurisdictionRisk.map((j) => j.avgRisk));
   const activeCount = alerts.filter((a) => a.status !== "closed").length;
 
   const bands = [
@@ -245,6 +260,36 @@ export default function Dashboard() {
             )}
           </div>
         </div>
+
+        {jurisdictionRisk.length > 0 && (
+          <div className="bg-surface-container border border-surface-border rounded p-6 mb-8">
+            <h3 className="font-headline-sm text-headline-sm text-data-focus mb-1">Jurisdictional Risk Ranking</h3>
+            <p className="font-body-md text-body-md text-on-surface-variant mb-4">
+              Real-time aggregation of flagged activity by entity jurisdiction, computed from live alert data.
+            </p>
+            <div className="space-y-3">
+              {jurisdictionRisk.map((j) => (
+                <div key={j.name} className="flex items-center gap-4">
+                  <span className="w-32 font-data-tabular text-data-tabular text-on-surface truncate shrink-0">
+                    {j.name}
+                  </span>
+                  <div className="flex-1 bg-surface-variant rounded h-5 overflow-hidden">
+                    <div
+                      className={`h-full ${j.avgRisk >= 90 ? "bg-status-critical" : j.avgRisk >= 70 ? "bg-status-warning" : "bg-status-success"}`}
+                      style={{ width: `${(j.avgRisk / maxJurisdictionRisk) * 100}%` }}
+                    />
+                  </div>
+                  <span className="w-20 text-right font-data-tabular text-data-tabular text-on-surface shrink-0">
+                    {j.avgRisk} avg
+                  </span>
+                  <span className="w-24 text-right font-data-tabular text-data-tabular text-on-surface-variant shrink-0">
+                    {j.count} {j.count === 1 ? "alert" : "alerts"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <h3 className="font-headline-sm text-headline-sm text-data-focus mb-4">Alert Queue</h3>
         <div className="bg-surface-container border border-surface-border rounded divide-y divide-surface-border">

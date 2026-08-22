@@ -21,7 +21,7 @@ export default function Login() {
       setError(error.message);
       return;
     }
-    navigate("/dashboard");
+    navigate("/biometric-verification");
   };
 
   return (

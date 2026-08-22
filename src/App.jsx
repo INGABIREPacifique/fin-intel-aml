@@ -4,6 +4,7 @@ import { ThemeProvider } from "./lib/ThemeContext";
 import { MobileNavProvider } from "./lib/MobileNavContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
+import BiometricVerification from "./pages/BiometricVerification";
 import Dashboard from "./pages/Dashboard";
 import CaseDetail from "./pages/CaseDetail";
 import SarFiling from "./pages/SarFiling";
@@ -42,6 +43,14 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/login" element={<Login />} />
+          <Route
+            path="/biometric-verification"
+            element={
+              <ProtectedRoute allowedRoles={ALL_ROLES}>
+                <BiometricVerification />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/dashboard"
