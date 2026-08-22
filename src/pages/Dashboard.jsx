@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import Sidebar from "../components/Sidebar";
 import TopNavBar from "../components/TopNavBar";
+import JurisdictionMap from "../components/JurisdictionMap";
 import { useAuth } from "../lib/AuthContext";
 
 function PatternTrendChart({ trends }) {
@@ -263,30 +264,32 @@ export default function Dashboard() {
 
         {jurisdictionRisk.length > 0 && (
           <div className="bg-surface-container border border-surface-border rounded p-6 mb-8">
-            <h3 className="font-headline-sm text-headline-sm text-data-focus mb-1">Jurisdictional Risk Ranking</h3>
+            <h3 className="font-headline-sm text-headline-sm text-data-focus mb-1">Global Jurisdictional Risk</h3>
             <p className="font-body-md text-body-md text-on-surface-variant mb-4">
-              Real-time aggregation of flagged activity by entity jurisdiction, computed from live alert data.
+              Real-time fund flow risk by entity jurisdiction — marker size reflects alert volume, color reflects average risk.
             </p>
-            <div className="space-y-3">
-              {jurisdictionRisk.map((j) => (
-                <div key={j.name} className="flex items-center gap-4">
-                  <span className="w-32 font-data-tabular text-data-tabular text-on-surface truncate shrink-0">
-                    {j.name}
-                  </span>
-                  <div className="flex-1 bg-surface-variant rounded h-5 overflow-hidden">
-                    <div
-                      className={`h-full ${j.avgRisk >= 90 ? "bg-status-critical" : j.avgRisk >= 70 ? "bg-status-warning" : "bg-status-success"}`}
-                      style={{ width: `${(j.avgRisk / maxJurisdictionRisk) * 100}%` }}
-                    />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <JurisdictionMap jurisdictionRisk={jurisdictionRisk} />
+              </div>
+              <div className="space-y-3">
+                {jurisdictionRisk.map((j) => (
+                  <div key={j.name} className="flex items-center justify-between">
+                    <span className="font-data-tabular text-data-tabular text-on-surface truncate">{j.name}</span>
+                    <span
+                      className={`font-label-caps text-label-caps px-2 py-0.5 rounded border shrink-0 ${
+                        j.avgRisk >= 90
+                          ? "text-status-critical border-status-critical bg-status-critical/10"
+                          : j.avgRisk >= 70
+                          ? "text-status-warning border-status-warning bg-status-warning/10"
+                          : "text-status-success border-status-success bg-status-success/10"
+                      }`}
+                    >
+                      {j.avgRisk}
+                    </span>
                   </div>
-                  <span className="w-20 text-right font-data-tabular text-data-tabular text-on-surface shrink-0">
-                    {j.avgRisk} avg
-                  </span>
-                  <span className="w-24 text-right font-data-tabular text-data-tabular text-on-surface-variant shrink-0">
-                    {j.count} {j.count === 1 ? "alert" : "alerts"}
-                  </span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         )}
