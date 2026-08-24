@@ -106,10 +106,23 @@ export default function Dashboard() {
 
   const highRiskCount = alerts.filter((a) => a.risk_score >= 90).length;
 
-  // Real jurisdictional risk ranking, computed live from actual alert data
+  // Real jurisdictional risk ranking, computed live from actual alert data.
+  // Normalizes casing/aliases (e.g. "CAYMAN"/"cayman"/"Cayman Islands") so the
+  // same real-world jurisdiction doesn't fragment into duplicate entries.
+  const JURISDICTION_ALIASES = {
+    cayman: "Cayman Islands",
+    "cayman islands": "Cayman Islands",
+    bvi: "British Virgin Islands",
+    "british virgin islands": "British Virgin Islands",
+  };
+  const normalizeJurisdiction = (raw) => {
+    if (!raw) return null;
+    const key = raw.trim().toLowerCase();
+    return JURISDICTION_ALIASES[key] || raw.trim();
+  };
   const jurisdictionMap = {};
   alerts.forEach((a) => {
-    const j = a.entities?.jurisdiction;
+    const j = normalizeJurisdiction(a.entities?.jurisdiction);
     if (!j) return;
     if (!jurisdictionMap[j]) jurisdictionMap[j] = { count: 0, totalRisk: 0, volume: 0 };
     jurisdictionMap[j].count += 1;

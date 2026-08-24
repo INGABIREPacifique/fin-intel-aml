@@ -31,6 +31,9 @@
   --color-status-warning: #f59e0b;
   --color-status-success: #10b981;
   --color-data-focus: #38bdf8;
+  --color-map-ocean: #0c1e3e;
+  --color-map-land: #1e293b;
+  --color-map-border: #334155;
 }
 
 /* Light theme */
@@ -61,6 +64,9 @@
   --color-status-warning: #b45309;
   --color-status-success: #047857;
   --color-data-focus: #1d4ed8;
+  --color-map-ocean: #bfdbfe;
+  --color-map-land: #f1f5f9;
+  --color-map-border: #94a3b8;
 }
 
 .light [class*="bg-surface-container"] {
