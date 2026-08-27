@@ -14,21 +14,28 @@ export default function InstitutionProfile() {
   const [auditEntries, setAuditEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionMessage, setActionMessage] = useState("");
+  const [loadError, setLoadError] = useState("");
 
   const load = async () => {
+    setLoadError("");
     const { data: inst, error } = await supabase
       .from("institutions")
       .select("*")
       .eq("institution_code", code)
       .single();
 
-    if (error || !inst) {
+    if (error) {
+      setLoadError(error.message);
+      setLoading(false);
+      return;
+    }
+    if (!inst) {
       setLoading(false);
       return;
     }
     setInstitution(inst);
 
-    const [{ data: agreementData }, { data: auditData }] = await Promise.all([
+    const [{ data: agreementData, error: agreementErr }, { data: auditData, error: auditErr }] = await Promise.all([
       supabase.from("institution_legal_agreements").select("*").eq("institution_id", inst.id),
       supabase
         .from("audit_logs")
@@ -37,6 +44,8 @@ export default function InstitutionProfile() {
         .eq("target_id", inst.id)
         .order("created_at", { ascending: false }),
     ]);
+    const secondaryError = agreementErr || auditErr;
+    if (secondaryError) setLoadError(secondaryError.message);
     setAgreements(agreementData ?? []);
     setAuditEntries(auditData ?? []);
     setLoading(false);
@@ -106,6 +115,14 @@ export default function InstitutionProfile() {
     return (
       <div className="min-h-screen bg-background text-on-surface-variant font-data-tabular text-data-tabular p-8">
         Loading institution...
+      </div>
+    );
+  }
+
+  if (loadError && !institution) {
+    return (
+      <div className="min-h-screen bg-background text-status-critical font-data-tabular text-data-tabular p-8">
+        Couldn't load this institution: {loadError}
       </div>
     );
   }
