@@ -152,6 +152,35 @@ export default function WorkspacePanel({ caseCode, onClose }) {
     setMentionOpen(val.endsWith("@"));
   };
 
+  const buildSmartDraft = () => {
+    if (!caseRecord) return "";
+    const doneItems = actionItems.filter((a) => a.done).length;
+    const totalItems = actionItems.length;
+    const openItems = actionItems.filter((a) => !a.done);
+    const latestMilestone = [...milestones].reverse().find((m) => m.status === "done") ?? milestones[milestones.length - 1];
+    const nextMilestone = milestones.find((m) => m.status !== "done");
+
+    const parts = [`Status update on ${caseRecord.case_code} (${caseRecord.risk_level.toUpperCase()} risk):`];
+    if (latestMilestone) {
+      parts.push(`Most recent milestone: "${latestMilestone.title}"${latestMilestone.occurred_on ? ` (${latestMilestone.occurred_on})` : ""}.`);
+    }
+    if (nextMilestone) {
+      parts.push(`Next up: "${nextMilestone.title}".`);
+    }
+    if (totalItems > 0) {
+      parts.push(`Action items: ${doneItems}/${totalItems} complete.`);
+      if (openItems.length > 0) {
+        parts.push(`Outstanding: ${openItems.map((i) => i.title).join(", ")}.`);
+      }
+    }
+    parts.push(`Task force: ${taskForce.length} member${taskForce.length === 1 ? "" : "s"} active.`);
+    return parts.join(" ");
+  };
+
+  const handleSmartDraft = () => {
+    setNoteText(buildSmartDraft());
+  };
+
   const insertMention = (name) => {
     setNoteText((prev) => prev.slice(0, -1) + `@${name} `);
     setMentionOpen(false);
@@ -275,6 +304,14 @@ export default function WorkspacePanel({ caseCode, onClose }) {
                 title={recording ? "Stop recording" : "Record voice note"}
               >
                 <span className="material-symbols-outlined text-[18px]">{recording ? "stop_circle" : "mic"}</span>
+              </button>
+              <button
+                onClick={handleSmartDraft}
+                className="flex items-center gap-1 px-2 py-1 rounded hover:bg-surface-container-high text-data-focus transition-colors"
+                title="Fill the note field with a status summary drafted from this case's real data"
+              >
+                <span className="material-symbols-outlined text-[16px]">smart_toy</span>
+                <span className="font-label-caps text-label-caps">Smart Draft</span>
               </button>
               <span className="font-data-tabular text-data-tabular text-on-surface-variant">Type @ to mention</span>
             </div>
