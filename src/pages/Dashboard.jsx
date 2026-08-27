@@ -80,6 +80,7 @@ export default function Dashboard() {
   const [resolvedCount, setResolvedCount] = useState(0);
   const [demoMetric, setDemoMetric] = useState(null);
   const [demoTrends, setDemoTrends] = useState([]);
+  const [activeInstitutions, setActiveInstitutions] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -89,22 +90,31 @@ export default function Dashboard() {
         { count: resolvedCountResult },
         { data: metricData },
         { data: trendData },
+        { count: activeInstitutionCount, error: instErr },
       ] = await Promise.all([
         supabase.from("alerts").select("*, entities(entity_name, jurisdiction)").order("risk_score", { ascending: false }),
         supabase.from("cases").select("*", { count: "exact", head: true }).eq("status", "resolved"),
         supabase.from("demo_metrics").select("*").eq("key", "false_positive_rate").maybeSingle(),
         supabase.from("demo_pattern_trends").select("*").order("week_order", { ascending: true }),
+        supabase.from("institutions").select("*", { count: "exact", head: true }).eq("status", "active"),
       ]);
       if (!alertErr) setAlerts(alertData);
       setResolvedCount(resolvedCountResult ?? 0);
       setDemoMetric(metricData);
       setDemoTrends(trendData ?? []);
+      if (!instErr) setActiveInstitutions(activeInstitutionCount ?? 0);
       setLoading(false);
     }
     loadData();
   }, []);
 
   const highRiskCount = alerts.filter((a) => a.risk_score >= 90).length;
+  const totalVolumeProcessed = alerts.reduce((sum, a) => sum + Number(a.volume ?? 0), 0);
+  const formatVolume = (v) => {
+    if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
+    if (v >= 1_000) return `$${(v / 1_000).toFixed(1)}K`;
+    return `$${v.toLocaleString()}`;
+  };
 
   // Real jurisdictional risk ranking, computed live from actual alert data.
   // Normalizes casing/aliases (e.g. "CAYMAN"/"cayman"/"Cayman Islands") so the
@@ -178,23 +188,23 @@ export default function Dashboard() {
           <div className="bg-surface-container border border-surface-border p-4 rounded">
             <div className="flex items-start justify-between mb-3">
               <p className="font-label-caps text-label-caps text-on-surface-variant uppercase">
-                Total Alerts Processed
+                Total Volume Processed
               </p>
               <span className="material-symbols-outlined text-on-surface-variant text-[18px]">database</span>
             </div>
             <p className="font-headline-lg text-headline-lg text-on-surface">
-              {loading ? "…" : alerts.length}
+              {loading ? "…" : formatVolume(totalVolumeProcessed)}
             </p>
           </div>
           <div className="bg-surface-container border border-surface-border p-4 rounded">
             <div className="flex items-start justify-between mb-3">
               <p className="font-label-caps text-label-caps text-on-surface-variant uppercase">
-                Active Investigations
+                Active Institutions
               </p>
-              <span className="material-symbols-outlined text-on-surface-variant text-[18px]">person_search</span>
+              <span className="material-symbols-outlined text-on-surface-variant text-[18px]">account_balance</span>
             </div>
             <p className="font-headline-lg text-headline-lg text-on-surface">
-              {loading ? "…" : activeCount}
+              {loading ? "…" : activeInstitutions}
             </p>
           </div>
           <div className="bg-surface-container border border-status-critical/30 p-4 rounded shadow-[0_0_15px_0_rgba(239,68,68,0.1)]">

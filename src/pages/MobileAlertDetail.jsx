@@ -9,12 +9,25 @@ export default function MobileAlertDetail() {
   const { session } = useAuth();
   const [alert, setAlert] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [message, setMessage] = useState("");
 
   const load = async () => {
-    const { data } = await supabase.from("alerts").select("*, entities(*)").eq("case_code", caseCode).single();
-    setAlert(data ?? null);
-    setLoading(false);
+    setLoadError("");
+    try {
+      const { data, error } = await supabase.from("alerts").select("*, entities(*)").eq("case_code", caseCode).single();
+      if (error) {
+        setLoadError(error.message);
+        setAlert(null);
+      } else {
+        setAlert(data ?? null);
+      }
+    } catch (err) {
+      setLoadError(err.message);
+      setAlert(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -22,22 +35,43 @@ export default function MobileAlertDetail() {
   }, [caseCode]);
 
   const handleAcknowledge = async () => {
-    await supabase.from("alerts").update({ status: "investigating" }).eq("case_code", caseCode);
-    await supabase.from("audit_logs").insert({
-      actor_id: session.user.id,
-      action: "alert_acknowledged_mobile",
-      target_type: "case",
-      target_label: caseCode,
-      details: { note: "Acknowledged from Mobile Field Hub" },
-    });
-    setMessage("Acknowledged — status set to investigating.");
-    load();
+    setMessage("");
+    try {
+      const { error: updateErr } = await supabase.from("alerts").update({ status: "investigating" }).eq("case_code", caseCode);
+      if (updateErr) {
+        setMessage(`Couldn't acknowledge: ${updateErr.message}`);
+        return;
+      }
+      const { error: logErr } = await supabase.from("audit_logs").insert({
+        actor_id: session.user.id,
+        action: "alert_acknowledged_mobile",
+        target_type: "case",
+        target_label: caseCode,
+        details: { note: "Acknowledged from Mobile Field Hub" },
+      });
+      if (logErr) {
+        setMessage(`Status updated, but audit log failed: ${logErr.message}`);
+      } else {
+        setMessage("Acknowledged — status set to investigating.");
+      }
+      load();
+    } catch (err) {
+      setMessage(`Couldn't acknowledge: ${err.message}`);
+    }
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background text-on-surface-variant font-data-tabular text-data-tabular p-6 max-w-[430px] mx-auto">
         Loading...
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background text-status-critical font-data-tabular text-data-tabular p-6 max-w-[430px] mx-auto">
+        Couldn't load this alert: {loadError}
       </div>
     );
   }

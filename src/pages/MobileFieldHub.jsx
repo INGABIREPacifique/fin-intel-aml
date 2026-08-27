@@ -16,16 +16,27 @@ export default function MobileFieldHub() {
   const [alerts, setAlerts] = useState([]);
   const [institutions, setInstitutions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     async function load() {
-      const [{ data: alertData }, { data: instData }] = await Promise.all([
-        supabase.from("alerts").select("*, entities(entity_name)").order("created_at", { ascending: false }),
-        supabase.from("institutions").select("*"),
-      ]);
-      setAlerts(alertData ?? []);
-      setInstitutions(instData ?? []);
-      setLoading(false);
+      try {
+        const [{ data: alertData, error: alertErr }, { data: instData, error: instErr }] = await Promise.all([
+          supabase.from("alerts").select("*, entities(entity_name)").order("created_at", { ascending: false }),
+          supabase.from("institutions").select("*"),
+        ]);
+        const firstError = alertErr || instErr;
+        if (firstError) {
+          setErrorMessage(`Couldn't load field hub data: ${firstError.message}`);
+        } else {
+          setAlerts(alertData ?? []);
+          setInstitutions(instData ?? []);
+        }
+      } catch (err) {
+        setErrorMessage(`Couldn't load field hub data: ${err.message}`);
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, []);
@@ -51,6 +62,9 @@ export default function MobileFieldHub() {
       </header>
 
       <main className="px-4 space-y-6">
+        {errorMessage && (
+          <p className="font-data-tabular text-data-tabular text-status-critical">{errorMessage}</p>
+        )}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-surface-container border border-surface-border rounded p-4">
             <p className="font-label-caps text-label-caps text-on-surface-variant uppercase mb-2">Active Cases</p>

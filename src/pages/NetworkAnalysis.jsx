@@ -9,16 +9,27 @@ export default function NetworkAnalysis() {
   const [anomalies, setAnomalies] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     async function load() {
-      const [{ data: anomalyData }, { data: alertData }] = await Promise.all([
-        supabase.from("cross_market_anomalies").select("*").order("sort_order"),
-        supabase.from("alerts").select("pattern, risk_score"),
-      ]);
-      setAnomalies(anomalyData ?? []);
-      setAlerts(alertData ?? []);
-      setLoading(false);
+      try {
+        const [{ data: anomalyData, error: anomalyErr }, { data: alertData, error: alertErr }] = await Promise.all([
+          supabase.from("cross_market_anomalies").select("*").order("sort_order"),
+          supabase.from("alerts").select("pattern, risk_score"),
+        ]);
+        const firstError = anomalyErr || alertErr;
+        if (firstError) {
+          setErrorMessage(`Couldn't load network analysis data: ${firstError.message}`);
+        } else {
+          setAnomalies(anomalyData ?? []);
+          setAlerts(alertData ?? []);
+        }
+      } catch (err) {
+        setErrorMessage(`Couldn't load network analysis data: ${err.message}`);
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, []);
@@ -43,6 +54,10 @@ export default function NetworkAnalysis() {
           <p className="font-body-md text-body-md text-on-surface-variant mb-8">
             Correlating anomalies across equities, derivatives, and banking infrastructure.
           </p>
+
+          {errorMessage && (
+            <p className="font-data-tabular text-data-tabular text-status-critical mb-4">{errorMessage}</p>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
             <div className="lg:col-span-2 bg-surface-container border border-surface-border rounded p-6 relative">

@@ -88,6 +88,7 @@ export default function GraphExplorer() {
   const [relationships, setRelationships] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
   const [selected, setSelected] = useState(null);
 
   // Officer/Admin tier controls
@@ -102,15 +103,29 @@ export default function GraphExplorer() {
 
   useEffect(() => {
     async function load() {
-      const [{ data: entityData }, { data: relData }, { data: alertData }] = await Promise.all([
-        supabase.from("entities").select("*"),
-        supabase.from("entity_relationships").select("*"),
-        supabase.from("alerts").select("entity_id, risk_score, pattern"),
-      ]);
-      setEntities(entityData ?? []);
-      setRelationships(relData ?? []);
-      setAlerts(alertData ?? []);
-      setLoading(false);
+      try {
+        const [
+          { data: entityData, error: entityErr },
+          { data: relData, error: relErr },
+          { data: alertData, error: alertErr },
+        ] = await Promise.all([
+          supabase.from("entities").select("*"),
+          supabase.from("entity_relationships").select("*"),
+          supabase.from("alerts").select("entity_id, risk_score, pattern"),
+        ]);
+        const firstError = entityErr || relErr || alertErr;
+        if (firstError) {
+          setErrorMessage(`Couldn't load graph data: ${firstError.message}`);
+        } else {
+          setEntities(entityData ?? []);
+          setRelationships(relData ?? []);
+          setAlerts(alertData ?? []);
+        }
+      } catch (err) {
+        setErrorMessage(`Couldn't load graph data: ${err.message}`);
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, []);
@@ -190,10 +205,14 @@ export default function GraphExplorer() {
             {!isAdvanced && " (Investigator view — real cycle & community detection, volume/time filters.)"}
           </p>
 
+          {errorMessage && (
+            <p className="font-data-tabular text-data-tabular text-status-critical mb-4">{errorMessage}</p>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
             <div className="lg:col-span-3 bg-surface-container border border-surface-border rounded p-6 relative">
               {loading && <p className="font-data-tabular text-data-tabular text-on-surface-variant">Loading graph...</p>}
-              {!loading && (
+              {!loading && !errorMessage && (
                 <svg viewBox="0 0 560 560" className="w-full h-[560px]">
                   {visibleRelationships.map((r) => {
                     const from = positions[r.from_entity_id];
