@@ -9,6 +9,7 @@ export default function Investigations() {
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -16,7 +17,11 @@ export default function Investigations() {
         .from("cases")
         .select("*, entities(entity_name, jurisdiction)")
         .order("created_at", { ascending: false });
-      if (!error) setCases(data);
+      if (error) {
+        setErrorMessage(error.message);
+      } else {
+        setCases(data);
+      }
       setLoading(false);
     }
     load();
@@ -58,7 +63,12 @@ export default function Investigations() {
             {loading && (
               <p className="p-6 font-data-tabular text-data-tabular text-on-surface-variant">Loading cases...</p>
             )}
-            {!loading && filtered.length === 0 && (
+            {!loading && errorMessage && (
+              <p className="p-6 font-data-tabular text-data-tabular text-status-critical">
+                Couldn't load cases: {errorMessage}
+              </p>
+            )}
+            {!loading && !errorMessage && filtered.length === 0 && (
               <p className="p-6 font-data-tabular text-data-tabular text-on-surface-variant">
                 No cases match this filter.
               </p>

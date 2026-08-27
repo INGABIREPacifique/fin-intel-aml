@@ -11,6 +11,7 @@ export default function AlertQueue() {
   const [loading, setLoading] = useState(true);
   const [riskFilter, setRiskFilter] = useState(searchParams.get("risk") ?? "all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     async function loadAlerts() {
@@ -18,7 +19,11 @@ export default function AlertQueue() {
         .from("alerts")
         .select("*, entities(entity_name)")
         .order("risk_score", { ascending: false });
-      if (!error) setAlerts(data);
+      if (error) {
+        setErrorMessage(error.message);
+      } else {
+        setAlerts(data);
+      }
       setLoading(false);
     }
     loadAlerts();
@@ -78,7 +83,12 @@ export default function AlertQueue() {
             Loading alerts...
           </p>
         )}
-        {!loading && filtered.length === 0 && (
+        {!loading && errorMessage && (
+          <p className="p-6 font-data-tabular text-data-tabular text-status-critical">
+            Couldn't load alerts: {errorMessage}
+          </p>
+        )}
+        {!loading && !errorMessage && filtered.length === 0 && (
           <p className="p-6 font-data-tabular text-data-tabular text-on-surface-variant">
             No alerts match these filters.
           </p>

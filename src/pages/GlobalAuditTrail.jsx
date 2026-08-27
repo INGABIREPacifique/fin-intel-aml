@@ -10,6 +10,7 @@ export default function GlobalAuditTrail() {
   const [loading, setLoading] = useState(true);
   const [actionFilter, setActionFilter] = useState("all");
   const [selected, setSelected] = useState(null);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -17,7 +18,9 @@ export default function GlobalAuditTrail() {
         .from("audit_logs")
         .select("*, profiles(full_name)")
         .order("created_at", { ascending: false });
-      if (!error) {
+      if (error) {
+        setErrorMessage(error.message);
+      } else {
         setEntries(data);
         if (data.length > 0) setSelected(data[0]);
       }
@@ -31,16 +34,19 @@ export default function GlobalAuditTrail() {
 
   const handleFlag = async () => {
     if (!selected) return;
+    setErrorMessage("");
     const { data, error } = await supabase
       .from("audit_logs")
       .update({ status: "flagged" })
       .eq("id", selected.id)
       .select()
       .single();
-    if (!error) {
-      setSelected(data);
-      setEntries((prev) => prev.map((e) => (e.id === data.id ? data : e)));
+    if (error) {
+      setErrorMessage(`Couldn't flag entry: ${error.message}`);
+      return;
     }
+    setSelected(data);
+    setEntries((prev) => prev.map((e) => (e.id === data.id ? data : e)));
   };
 
   const statusStyle = (status) => {
@@ -61,6 +67,10 @@ export default function GlobalAuditTrail() {
           <p className="font-body-md text-body-md text-on-surface-variant mb-6">
             Immutable system-wide log of every recorded action, for full explainability.
           </p>
+
+          {errorMessage && (
+            <p className="font-data-tabular text-data-tabular text-status-critical mb-4">{errorMessage}</p>
+          )}
 
           <div className="flex items-center gap-3 mb-4">
             <select

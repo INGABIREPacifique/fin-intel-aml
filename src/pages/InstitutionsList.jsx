@@ -8,11 +8,16 @@ export default function InstitutionsList() {
   const navigate = useNavigate();
   const [institutions, setInstitutions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     async function load() {
       const { data, error } = await supabase.from("institutions").select("*").order("name");
-      if (!error) setInstitutions(data);
+      if (error) {
+        setErrorMessage(error.message);
+      } else {
+        setInstitutions(data);
+      }
       setLoading(false);
     }
     load();
@@ -43,7 +48,12 @@ export default function InstitutionsList() {
             {loading && (
               <p className="p-6 font-data-tabular text-data-tabular text-on-surface-variant">Loading...</p>
             )}
-            {!loading && institutions.length === 0 && (
+            {!loading && errorMessage && (
+              <p className="p-6 font-data-tabular text-data-tabular text-status-critical">
+                Couldn't load institutions: {errorMessage}
+              </p>
+            )}
+            {!loading && !errorMessage && institutions.length === 0 && (
               <p className="p-6 font-data-tabular text-data-tabular text-on-surface-variant">
                 No institutions yet. Run migration_005_institutions.sql to seed a demo institution.
               </p>
