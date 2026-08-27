@@ -81,7 +81,7 @@ function detectCommunities(entityIds, relationships) {
 }
 
 export default function GraphExplorer() {
-  const { profile } = useAuth();
+  const { profile, session } = useAuth();
   const isAdvanced = profile?.role === "compliance_officer" || profile?.role === "admin";
 
   const [entities, setEntities] = useState([]);
@@ -90,6 +90,7 @@ export default function GraphExplorer() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [selected, setSelected] = useState(null);
+  const [nodeActionMessage, setNodeActionMessage] = useState("");
 
   // Officer/Admin tier controls
   const [search, setSearch] = useState("");
@@ -192,6 +193,48 @@ export default function GraphExplorer() {
   const selectedRelationships = selected
     ? relationships.filter((r) => r.from_entity_id === selected.id || r.to_entity_id === selected.id)
     : [];
+
+  const handleNodeAction = async (actionType) => {
+    if (!selected) return;
+    const relatedAlert = riskByEntity[selected.id];
+    setNodeActionMessage("");
+
+    if (!relatedAlert) {
+      setNodeActionMessage(`${selected.entity_name} has no open alert to ${actionType === "deprioritize" ? "deprioritize" : "flag"}.`);
+      return;
+    }
+
+    const newStatus = actionType === "deprioritize" ? "closed" : "investigating";
+    const { data, error } = await supabase
+      .from("alerts")
+      .update({ status: newStatus })
+      .eq("id", relatedAlert.id)
+      .select()
+      .single();
+
+    if (error) {
+      setNodeActionMessage(`Couldn't ${actionType === "deprioritize" ? "deprioritize" : "flag"} entity: ${error.message}`);
+      return;
+    }
+
+    setAlerts((prev) => prev.map((a) => (a.id === data.id ? data : a)));
+    const { error: logErr } = await supabase.from("audit_logs").insert({
+      actor_id: session.user.id,
+      action: actionType === "deprioritize" ? "entity_deprioritized" : "entity_flagged_for_review",
+      target_type: "alert",
+      target_id: relatedAlert.id,
+      target_label: selected.entity_name,
+      details: { note: `Set from Network Graph Investigation view` },
+    });
+
+    setNodeActionMessage(
+      logErr
+        ? `${actionType === "deprioritize" ? "Deprioritized" : "Flagged for review"}, but audit log failed: ${logErr.message}`
+        : actionType === "deprioritize"
+        ? `${selected.entity_name} deprioritized — alert closed.`
+        : `${selected.entity_name} flagged for review — status set to investigating.`
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background text-on-surface flex">
@@ -363,6 +406,27 @@ export default function GraphExplorer() {
                           </div>
                         );
                       })}
+                    </div>
+                  </div>
+                )}
+                {selected && (
+                  <div className="border-t border-surface-border pt-3 mt-3 space-y-2">
+                    {nodeActionMessage && (
+                      <p className="font-data-tabular text-data-tabular text-status-warning">{nodeActionMessage}</p>
+                    )}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleNodeAction("deprioritize")}
+                        className="flex-1 border border-surface-border text-on-surface-variant py-2 rounded font-label-caps text-label-caps hover:bg-surface-variant transition-colors"
+                      >
+                        Deprioritize
+                      </button>
+                      <button
+                        onClick={() => handleNodeAction("flag")}
+                        className="flex-1 bg-status-critical text-on-primary-fixed py-2 rounded font-label-caps text-label-caps font-semibold"
+                      >
+                        Flag for Review
+                      </button>
                     </div>
                   </div>
                 )}
