@@ -14,7 +14,11 @@ export default function EntitySearch() {
 
   const load = async () => {
     const { data, error } = await supabase.from("entities").select("*").order("entity_name");
-    if (!error) setEntities(data);
+    if (error) {
+      setErrorMessage(error.message);
+    } else {
+      setEntities(data);
+    }
     setLoading(false);
   };
 
@@ -79,7 +83,11 @@ export default function EntitySearch() {
               <p className="p-6 font-data-tabular text-data-tabular text-on-surface-variant">No entities match.</p>
             )}
             {filtered.map((e) => (
-              <div key={e.id} className="p-4 flex items-center justify-between">
+              <div
+                key={e.id}
+                onClick={() => navigate(`/entities/${e.id}`)}
+                className="p-4 flex items-center justify-between hover:bg-surface-container-high transition-colors cursor-pointer"
+              >
                 <div>
                   <p className="font-body-lg text-body-lg text-on-surface font-semibold">{e.entity_name}</p>
                   <p className="font-data-tabular text-data-tabular text-on-surface-variant">
@@ -87,7 +95,10 @@ export default function EntitySearch() {
                   </p>
                 </div>
                 <button
-                  onClick={() => toggleWatchlist(e)}
+                  onClick={(evt) => {
+                    evt.stopPropagation();
+                    toggleWatchlist(e);
+                  }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded font-label-caps text-label-caps border ${
                     e.watchlisted
                       ? "text-status-warning border-status-warning bg-status-warning/10"

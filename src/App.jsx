@@ -23,6 +23,7 @@ import ApiGateway from "./pages/ApiGateway";
 import InstitutionOnboarding from "./pages/InstitutionOnboarding";
 import NetworkAnalysis from "./pages/NetworkAnalysis";
 import EntitySearch from "./pages/EntitySearch";
+import EntityProfile from "./pages/EntityProfile";
 import GraphExplorer from "./pages/GraphExplorer";
 import RiskModelDetail from "./pages/RiskModelDetail";
 import CaseWorkspace from "./pages/CaseWorkspace";
@@ -97,6 +98,14 @@ export default function App() {
             element={
               <ProtectedRoute allowedRoles={ALL_ROLES}>
                 <EntitySearch />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/entities/:id"
+            element={
+              <ProtectedRoute allowedRoles={ALL_ROLES}>
+                <EntityProfile />
               </ProtectedRoute>
             }
           />
