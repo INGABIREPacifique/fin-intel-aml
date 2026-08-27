@@ -25,18 +25,34 @@ export default function DataHealth() {
   const [errorMessage, setErrorMessage] = useState("");
 
   const load = async () => {
-    const [{ data: instData }, { data: auditData }, { count: entityCount }, { count: alertCount }, { count: caseCount }] =
-      await Promise.all([
+    setErrorMessage("");
+    try {
+      const [
+        { data: instData, error: instErr },
+        { data: auditData, error: auditErr },
+        { count: entityCount, error: entityErr },
+        { count: alertCount, error: alertErr },
+        { count: caseCount, error: caseErr },
+      ] = await Promise.all([
         supabase.from("institutions").select("*").order("name"),
         supabase.from("entity_resolution_audit").select("*").order("matched_at", { ascending: false }),
         supabase.from("entities").select("*", { count: "exact", head: true }),
         supabase.from("alerts").select("*", { count: "exact", head: true }),
         supabase.from("cases").select("*", { count: "exact", head: true }),
       ]);
-    setInstitutions(instData ?? []);
-    setResolutionAudit(auditData ?? []);
-    setRecordCount((entityCount ?? 0) + (alertCount ?? 0) + (caseCount ?? 0));
-    setLoading(false);
+      const firstError = instErr || auditErr || entityErr || alertErr || caseErr;
+      if (firstError) {
+        setErrorMessage(firstError.message);
+      } else {
+        setInstitutions(instData ?? []);
+        setResolutionAudit(auditData ?? []);
+        setRecordCount((entityCount ?? 0) + (alertCount ?? 0) + (caseCount ?? 0));
+      }
+    } catch (err) {
+      setErrorMessage(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {

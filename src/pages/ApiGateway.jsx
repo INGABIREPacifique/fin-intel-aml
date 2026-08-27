@@ -25,15 +25,27 @@ export default function ApiGateway() {
   const [expiryDays, setExpiryDays] = useState(90);
   const [scopes, setScopes] = useState({ "read:aml": true, "write:aml": false, "read:kyc": false, "admin:keys": false });
   const [newKeyRevealed, setNewKeyRevealed] = useState(null);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const load = async () => {
-    const [{ data: instData }, { data: keyData }] = await Promise.all([
-      supabase.from("institutions").select("*").order("name"),
-      supabase.from("api_keys").select("*").eq("revoked", false).order("created_at", { ascending: false }),
-    ]);
-    setInstitutions(instData ?? []);
-    setApiKeys(keyData ?? []);
-    setLoading(false);
+    setErrorMessage("");
+    try {
+      const [{ data: instData, error: instErr }, { data: keyData, error: keyErr }] = await Promise.all([
+        supabase.from("institutions").select("*").order("name"),
+        supabase.from("api_keys").select("*").eq("revoked", false).order("created_at", { ascending: false }),
+      ]);
+      const firstError = instErr || keyErr;
+      if (firstError) {
+        setErrorMessage(firstError.message);
+      } else {
+        setInstitutions(instData ?? []);
+        setApiKeys(keyData ?? []);
+      }
+    } catch (err) {
+      setErrorMessage(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -42,6 +54,7 @@ export default function ApiGateway() {
 
   const handleGenerateKey = async () => {
     if (!alias.trim()) return;
+    setErrorMessage("");
     const fullKey = `${alias.slice(0, 4).toLowerCase()}_${randomKey()}`;
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + Number(expiryDays));
@@ -61,29 +74,38 @@ export default function ApiGateway() {
       .select()
       .single();
 
-    if (!error) {
-      setNewKeyRevealed(data);
-      setAlias("");
-      await supabase.from("audit_logs").insert({
-        actor_id: session.user.id,
-        action: "api_key_generated",
-        target_type: "api_key",
-        target_label: data.key_alias,
-        details: { note: `Scopes: ${activeScopes.join(", ")}` },
-      });
-      load();
+    if (error) {
+      setErrorMessage(`Couldn't generate key: ${error.message}`);
+      return;
     }
+    setNewKeyRevealed(data);
+    setAlias("");
+    const { error: logErr } = await supabase.from("audit_logs").insert({
+      actor_id: session.user.id,
+      action: "api_key_generated",
+      target_type: "api_key",
+      target_label: data.key_alias,
+      details: { note: `Scopes: ${activeScopes.join(", ")}` },
+    });
+    if (logErr) setErrorMessage(`Key generated, but audit log failed: ${logErr.message}`);
+    load();
   };
 
   const handleRevoke = async (key) => {
-    await supabase.from("api_keys").update({ revoked: true }).eq("id", key.id);
-    await supabase.from("audit_logs").insert({
+    setErrorMessage("");
+    const { error } = await supabase.from("api_keys").update({ revoked: true }).eq("id", key.id);
+    if (error) {
+      setErrorMessage(`Couldn't revoke key: ${error.message}`);
+      return;
+    }
+    const { error: logErr } = await supabase.from("audit_logs").insert({
       actor_id: session.user.id,
       action: "api_key_revoked",
       target_type: "api_key",
       target_label: key.key_alias,
       details: {},
     });
+    if (logErr) setErrorMessage(`Key revoked, but audit log failed: ${logErr.message}`);
     load();
   };
 
@@ -101,6 +123,10 @@ export default function ApiGateway() {
               </p>
             </div>
           </div>
+
+          {errorMessage && (
+            <p className="font-data-tabular text-data-tabular text-status-critical mb-4">{errorMessage}</p>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="lg:col-span-2 flex flex-col gap-4">

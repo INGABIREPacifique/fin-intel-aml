@@ -22,21 +22,39 @@ export default function RiskEngineConfig() {
   const [strictness, setStrictness] = useState(0);
   const [latestRun, setLatestRun] = useState(null);
   const [running, setRunning] = useState(false);
+  const [loadError, setLoadError] = useState("");
 
   const load = async () => {
-    const [{ data: modelData }, { data: patternData }, { data: logData }, { data: runData }, { data: metricData }] = await Promise.all([
-      supabase.from("risk_models").select("*").order("sort_order"),
-      supabase.from("market_patterns").select("*").order("sort_order"),
-      supabase.from("audit_logs").select("*").eq("target_type", "risk_model").order("created_at", { ascending: false }).limit(5),
-      supabase.from("simulation_runs").select("*").order("created_at", { ascending: false }).limit(1).maybeSingle(),
-      supabase.from("demo_metrics").select("*").eq("key", "false_positive_rate").maybeSingle(),
-    ]);
-    setModels(modelData ?? []);
-    setPatterns(patternData ?? []);
-    setLogicUpdates(logData ?? []);
-    setLatestRun(runData ?? null);
-    setDemoMetric(metricData ?? null);
-    setLoading(false);
+    setLoadError("");
+    try {
+      const [
+        { data: modelData, error: modelErr },
+        { data: patternData, error: patternErr },
+        { data: logData, error: logErr },
+        { data: runData, error: runErr },
+        { data: metricData },
+      ] = await Promise.all([
+        supabase.from("risk_models").select("*").order("sort_order"),
+        supabase.from("market_patterns").select("*").order("sort_order"),
+        supabase.from("audit_logs").select("*").eq("target_type", "risk_model").order("created_at", { ascending: false }).limit(5),
+        supabase.from("simulation_runs").select("*").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("demo_metrics").select("*").eq("key", "false_positive_rate").maybeSingle(),
+      ]);
+      const firstError = modelErr || patternErr || logErr || runErr;
+      if (firstError) {
+        setLoadError(firstError.message);
+      } else {
+        setModels(modelData ?? []);
+        setPatterns(patternData ?? []);
+        setLogicUpdates(logData ?? []);
+        setLatestRun(runData ?? null);
+        setDemoMetric(metricData ?? null);
+      }
+    } catch (err) {
+      setLoadError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -109,6 +127,12 @@ export default function RiskEngineConfig() {
           <p className="font-body-md text-body-md text-on-surface-variant mb-8">
             Manage detection logic, model thresholds, and heuristic rules.
           </p>
+
+          {loadError && (
+            <p className="font-data-tabular text-data-tabular text-status-critical mb-6">
+              Couldn't load risk engine data: {loadError}
+            </p>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <div className="bg-surface-container-high border border-surface-border rounded p-5">

@@ -24,22 +24,41 @@ export default function CaseDetail() {
   const [loading, setLoading] = useState(true);
   const [workspaceOpen, setWorkspaceOpen] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
+  const [loadError, setLoadError] = useState("");
 
   const load = async () => {
-    const [{ data: alertData }, { data: caseData }, { data: nodeData }, { data: edgeData }, { data: evidenceData }] =
-      await Promise.all([
+    setLoadError("");
+    try {
+      const [
+        { data: alertData, error: alertErr },
+        { data: caseData, error: caseErr },
+        { data: nodeData, error: nodeErr },
+        { data: edgeData, error: edgeErr },
+        { data: evidenceData, error: evidenceErr },
+      ] = await Promise.all([
         supabase.from("alerts").select("*, entities(*)").eq("case_code", caseCode).single(),
         supabase.from("cases").select("*, profiles(full_name)").eq("case_code", caseCode).maybeSingle(),
         supabase.from("case_network_nodes").select("*").eq("case_code", caseCode),
         supabase.from("case_network_edges").select("*").eq("case_code", caseCode),
         supabase.from("case_evidence").select("*").eq("case_code", caseCode).order("occurred_at", { ascending: false }),
       ]);
-    setAlert(alertData ?? null);
-    setCaseRecord(caseData ?? null);
-    setNodes(nodeData ?? []);
-    setEdges(edgeData ?? []);
-    setEvidence(evidenceData ?? []);
-    setLoading(false);
+      // alertErr from .single() also fires on genuine "no such case" — only
+      // surface it as a real error if there's no alert data to fall back on
+      // showing the existing "Case not found" state.
+      const structuralError = nodeErr || edgeErr || evidenceErr || (caseErr && caseData === null && !alertData);
+      if (structuralError) {
+        setLoadError(structuralError.message ?? "Couldn't load case data.");
+      }
+      setAlert(alertData ?? null);
+      setCaseRecord(caseData ?? null);
+      setNodes(nodeData ?? []);
+      setEdges(edgeData ?? []);
+      setEvidence(evidenceData ?? []);
+    } catch (err) {
+      setLoadError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -50,6 +69,14 @@ export default function CaseDetail() {
     return (
       <div className="min-h-screen bg-background text-on-surface-variant font-data-tabular text-data-tabular p-8">
         Loading case...
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background text-status-critical font-data-tabular text-data-tabular p-8">
+        Couldn't fully load this case: {loadError}
       </div>
     );
   }

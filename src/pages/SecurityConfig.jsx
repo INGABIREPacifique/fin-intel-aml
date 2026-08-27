@@ -10,18 +10,30 @@ export default function SecurityConfig() {
   const [sessionLimit, setSessionLimit] = useState(1);
   const [loading, setLoading] = useState(true);
   const [saveMessage, setSaveMessage] = useState("");
+  const [loadError, setLoadError] = useState("");
 
   const load = async () => {
-    const [{ data: groupData }, { data: settingsData }] = await Promise.all([
-      supabase.from("security_groups").select("*").order("sort_order"),
-      supabase.from("system_settings").select("*"),
-    ]);
-    setGroups(groupData ?? []);
-    const logoutSetting = settingsData?.find((s) => s.key === "auto_logout_minutes");
-    const limitSetting = settingsData?.find((s) => s.key === "concurrent_session_limit");
-    if (logoutSetting) setAutoLogout(Number(logoutSetting.value));
-    if (limitSetting) setSessionLimit(Number(limitSetting.value));
-    setLoading(false);
+    setLoadError("");
+    try {
+      const [{ data: groupData, error: groupErr }, { data: settingsData, error: settingsErr }] = await Promise.all([
+        supabase.from("security_groups").select("*").order("sort_order"),
+        supabase.from("system_settings").select("*"),
+      ]);
+      const firstError = groupErr || settingsErr;
+      if (firstError) {
+        setLoadError(firstError.message);
+      } else {
+        setGroups(groupData ?? []);
+        const logoutSetting = settingsData?.find((s) => s.key === "auto_logout_minutes");
+        const limitSetting = settingsData?.find((s) => s.key === "concurrent_session_limit");
+        if (logoutSetting) setAutoLogout(Number(logoutSetting.value));
+        if (limitSetting) setSessionLimit(Number(limitSetting.value));
+      }
+    } catch (err) {
+      setLoadError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -29,37 +41,47 @@ export default function SecurityConfig() {
   }, []);
 
   const handleToggle = async (group, field) => {
+    setLoadError("");
     const { data, error } = await supabase
       .from("security_groups")
       .update({ [field]: !group[field] })
       .eq("id", group.id)
       .select()
       .single();
-    if (!error) {
-      setGroups((prev) => prev.map((g) => (g.id === data.id ? data : g)));
-      await supabase.from("audit_logs").insert({
-        actor_id: session.user.id,
-        action: "security_group_policy_changed",
-        target_type: "security_group",
-        target_label: group.name,
-        details: { note: `${field} set to ${!group[field]}` },
-      });
+    if (error) {
+      setLoadError(`Couldn't update ${group.name}: ${error.message}`);
+      return;
     }
+    setGroups((prev) => prev.map((g) => (g.id === data.id ? data : g)));
+    const { error: logErr } = await supabase.from("audit_logs").insert({
+      actor_id: session.user.id,
+      action: "security_group_policy_changed",
+      target_type: "security_group",
+      target_label: group.name,
+      details: { note: `${field} set to ${!group[field]}` },
+    });
+    if (logErr) setLoadError(`Updated, but audit log failed: ${logErr.message}`);
   };
 
   const handleSavePolicies = async () => {
-    await Promise.all([
+    setSaveMessage("");
+    const [{ error: logoutErr }, { error: limitErr }] = await Promise.all([
       supabase.from("system_settings").update({ value: String(autoLogout) }).eq("key", "auto_logout_minutes"),
       supabase.from("system_settings").update({ value: String(sessionLimit) }).eq("key", "concurrent_session_limit"),
     ]);
-    await supabase.from("audit_logs").insert({
+    const firstError = logoutErr || limitErr;
+    if (firstError) {
+      setSaveMessage(`Couldn't save policies: ${firstError.message}`);
+      return;
+    }
+    const { error: logErr } = await supabase.from("audit_logs").insert({
       actor_id: session.user.id,
       action: "session_policies_updated",
       target_type: "system",
       target_label: "Session Governance",
       details: { note: `Auto-logout: ${autoLogout}min, Concurrent limit: ${sessionLimit}` },
     });
-    setSaveMessage("Policies saved.");
+    setSaveMessage(logErr ? `Saved, but audit log failed: ${logErr.message}` : "Policies saved.");
   };
 
   return (
@@ -70,6 +92,10 @@ export default function SecurityConfig() {
         <p className="font-body-md text-body-md text-on-surface-variant mb-8">
           Global parameters and access control management for FIN-INTEL AML instances.
         </p>
+
+        {loadError && (
+          <p className="font-data-tabular text-data-tabular text-status-critical mb-6">{loadError}</p>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <div className="bg-surface-container-high border border-surface-border rounded p-6 relative">
@@ -156,7 +182,11 @@ export default function SecurityConfig() {
                 ))}
               </div>
             </div>
-            {saveMessage && <p className="font-data-tabular text-data-tabular text-status-success mb-3">{saveMessage}</p>}
+            {saveMessage && (
+              <p className={`font-data-tabular text-data-tabular mb-3 ${saveMessage.startsWith("Couldn't") ? "text-status-critical" : "text-status-success"}`}>
+                {saveMessage}
+              </p>
+            )}
             <button
               onClick={handleSavePolicies}
               className="w-full bg-primary text-on-primary py-3 rounded font-label-caps text-label-caps font-semibold"

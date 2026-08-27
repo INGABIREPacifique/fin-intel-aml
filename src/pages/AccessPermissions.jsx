@@ -12,21 +12,37 @@ export default function AccessPermissions() {
   const [accessMap, setAccessMap] = useState({}); // `${permId}-${level}` -> true
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const load = async () => {
-    const [{ data: permData }, { data: accessData }, { data: requestData }] = await Promise.all([
-      supabase.from("permission_domains").select("*").order("sort_order"),
-      supabase.from("permission_access").select("*"),
-      supabase.from("access_requests").select("*").order("id"),
-    ]);
-    setPermissions(permData ?? []);
-    const map = {};
-    (accessData ?? []).forEach((a) => {
-      map[`${a.permission_id}-${a.clearance_level}`] = true;
-    });
-    setAccessMap(map);
-    setRequests(requestData ?? []);
-    setLoading(false);
+    setErrorMessage("");
+    try {
+      const [
+        { data: permData, error: permErr },
+        { data: accessData, error: accessErr },
+        { data: requestData, error: requestErr },
+      ] = await Promise.all([
+        supabase.from("permission_domains").select("*").order("sort_order"),
+        supabase.from("permission_access").select("*"),
+        supabase.from("access_requests").select("*").order("id"),
+      ]);
+      const firstError = permErr || accessErr || requestErr;
+      if (firstError) {
+        setErrorMessage(firstError.message);
+      } else {
+        setPermissions(permData ?? []);
+        const map = {};
+        (accessData ?? []).forEach((a) => {
+          map[`${a.permission_id}-${a.clearance_level}`] = true;
+        });
+        setAccessMap(map);
+        setRequests(requestData ?? []);
+      }
+    } catch (err) {
+      setErrorMessage(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -36,20 +52,30 @@ export default function AccessPermissions() {
   const toggleCell = async (permId, level) => {
     const key = `${permId}-${level}`;
     const isGranted = accessMap[key];
+    setErrorMessage("");
 
-    if (isGranted) {
-      await supabase.from("permission_access").delete().eq("permission_id", permId).eq("clearance_level", level);
-    } else {
-      await supabase.from("permission_access").insert({ permission_id: permId, clearance_level: level });
+    const { error: writeErr } = isGranted
+      ? await supabase.from("permission_access").delete().eq("permission_id", permId).eq("clearance_level", level)
+      : await supabase.from("permission_access").insert({ permission_id: permId, clearance_level: level });
+
+    if (writeErr) {
+      setErrorMessage(`Couldn't update access: ${writeErr.message}`);
+      return;
     }
+
+    // Only reflect the change once the write is confirmed, so the matrix
+    // never shows a permission state that isn't actually persisted.
     setAccessMap((prev) => ({ ...prev, [key]: !isGranted }));
-    await supabase.from("audit_logs").insert({
+    const { error: logErr } = await supabase.from("audit_logs").insert({
       actor_id: session.user.id,
       action: "permission_matrix_changed",
       target_type: "permission_domain",
       target_id: permId,
       details: { note: `Level ${level} access ${isGranted ? "revoked" : "granted"}` },
     });
+    if (logErr) {
+      setErrorMessage(`Access updated, but audit log failed: ${logErr.message}`);
+    }
   };
 
   const handleDecision = async (request, status) => {
@@ -82,6 +108,10 @@ export default function AccessPermissions() {
             </p>
           </div>
         </div>
+
+        {errorMessage && (
+          <p className="font-data-tabular text-data-tabular text-status-critical mb-6">{errorMessage}</p>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 bg-surface-container-high border border-surface-border rounded overflow-hidden">

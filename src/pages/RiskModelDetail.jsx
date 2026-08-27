@@ -20,24 +20,38 @@ export default function RiskModelDetail() {
   const [retentionRatio, setRetentionRatio] = useState(85);
   const [currencyNorm, setCurrencyNorm] = useState(true);
   const [previewFlags, setPreviewFlags] = useState(null);
+  const [loadError, setLoadError] = useState("");
 
   const load = async () => {
-    const { data } = await supabase.from("risk_models").select("*").eq("id", modelId).single();
-    if (data) {
-      setModel(data);
-      setMaxWindow(data.max_window_hours ?? 72);
-      setMinNodes(data.min_node_count ?? 3);
-      setRetentionRatio(data.loop_retention_ratio ?? 85);
-      setCurrencyNorm(data.currency_normalization ?? true);
+    setLoadError("");
+    try {
+      const { data, error: modelErr } = await supabase.from("risk_models").select("*").eq("id", modelId).single();
+      const { data: logs, error: logsErr } = await supabase
+        .from("audit_logs")
+        .select("*, profiles(full_name)")
+        .eq("target_type", "risk_model")
+        .eq("target_id", modelId)
+        .order("created_at", { ascending: false });
+
+      if (modelErr) {
+        setLoadError(modelErr.message);
+      } else if (data) {
+        setModel(data);
+        setMaxWindow(data.max_window_hours ?? 72);
+        setMinNodes(data.min_node_count ?? 3);
+        setRetentionRatio(data.loop_retention_ratio ?? 85);
+        setCurrencyNorm(data.currency_normalization ?? true);
+      }
+      if (logsErr) {
+        setLoadError((prev) => prev || logsErr.message);
+      } else {
+        setAuditEntries(logs ?? []);
+      }
+    } catch (err) {
+      setLoadError(err.message);
+    } finally {
+      setLoading(false);
     }
-    const { data: logs } = await supabase
-      .from("audit_logs")
-      .select("*, profiles(full_name)")
-      .eq("target_type", "risk_model")
-      .eq("target_id", modelId)
-      .order("created_at", { ascending: false });
-    setAuditEntries(logs ?? []);
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -82,9 +96,11 @@ export default function RiskModelDetail() {
       .select()
       .single();
 
-    if (!error) {
+    if (error) {
+      setMessage(`Couldn't save: ${error.message}`);
+    } else {
       setModel(data);
-      await supabase.from("audit_logs").insert({
+      const { error: logErr } = await supabase.from("audit_logs").insert({
         actor_id: session.user.id,
         action: "risk_model_parameters_updated",
         target_type: "risk_model",
@@ -92,7 +108,7 @@ export default function RiskModelDetail() {
         target_label: data.name,
         details: { note: changes.length ? changes.join("; ") : "Configuration saved (no numeric changes)" },
       });
-      setMessage("Configuration saved.");
+      setMessage(logErr ? `Saved, but audit log failed: ${logErr.message}` : "Configuration saved.");
       load();
     }
     setSaving(false);
@@ -100,6 +116,9 @@ export default function RiskModelDetail() {
 
   if (loading) {
     return <div className="min-h-screen bg-background text-on-surface-variant font-data-tabular text-data-tabular p-8">Loading...</div>;
+  }
+  if (loadError && !model) {
+    return <div className="min-h-screen bg-background text-status-critical font-data-tabular text-data-tabular p-8">Couldn't load this model: {loadError}</div>;
   }
   if (!model) {
     return <div className="min-h-screen bg-background text-status-critical font-data-tabular text-data-tabular p-8">Model not found.</div>;
@@ -190,7 +209,11 @@ export default function RiskModelDetail() {
                   </div>
                 )}
               </div>
-              {message && <p className="font-data-tabular text-data-tabular text-status-success mt-4">{message}</p>}
+              {message && (
+                <p className={`font-data-tabular text-data-tabular mt-4 ${message.startsWith("Couldn't") ? "text-status-critical" : "text-status-success"}`}>
+                  {message}
+                </p>
+              )}
             </div>
           </div>
 
