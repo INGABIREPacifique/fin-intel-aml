@@ -79,18 +79,22 @@ export default function AccessPermissions() {
   };
 
   const handleDecision = async (request, status) => {
+    setErrorMessage("");
     const { data, error } = await supabase.from("access_requests").update({ status }).eq("id", request.id).select().single();
-    if (!error) {
-      setRequests((prev) => prev.map((r) => (r.id === data.id ? data : r)));
-      await supabase.from("audit_logs").insert({
-        actor_id: session.user.id,
-        action: status === "approved" ? "access_request_approved" : "access_request_denied",
-        target_type: "access_request",
-        target_id: request.id,
-        target_label: request.requester_name,
-        details: { note: `Requested Level ${request.requested_level}` },
-      });
+    if (error) {
+      setErrorMessage(`Couldn't ${status === "approved" ? "approve" : "deny"} request: ${error.message}`);
+      return;
     }
+    setRequests((prev) => prev.map((r) => (r.id === data.id ? data : r)));
+    const { error: logErr } = await supabase.from("audit_logs").insert({
+      actor_id: session.user.id,
+      action: status === "approved" ? "access_request_approved" : "access_request_denied",
+      target_type: "access_request",
+      target_id: request.id,
+      target_label: request.requester_name,
+      details: { note: `Requested Level ${request.requested_level}` },
+    });
+    if (logErr) setErrorMessage(`Request ${status}, but audit log failed: ${logErr.message}`);
   };
 
   const pendingRequests = requests.filter((r) => r.status === "pending");
