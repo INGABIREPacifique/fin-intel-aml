@@ -9,7 +9,6 @@ import Dashboard from "./pages/Dashboard";
 import CaseDetail from "./pages/CaseDetail";
 import SarFiling from "./pages/SarFiling";
 import AlertQueue from "./pages/AlertQueue";
-import ComingSoon from "./pages/ComingSoon";
 import InstitutionsList from "./pages/InstitutionsList";
 import InstitutionProfile from "./pages/InstitutionProfile";
 import GlobalAuditTrail from "./pages/GlobalAuditTrail";

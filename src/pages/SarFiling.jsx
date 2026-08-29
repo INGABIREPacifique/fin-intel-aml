@@ -12,7 +12,6 @@ export default function SarFiling() {
   const canApprove = profile?.role === "compliance_officer" || profile?.role === "admin";
 
   const [caseRecord, setCaseRecord] = useState(null);
-  const [alert, setAlert] = useState(null);
   const [evidence, setEvidence] = useState([]);
   const [sar, setSar] = useState(null);
   const [narrative, setNarrative] = useState("");
@@ -76,7 +75,6 @@ export default function SarFiling() {
       const secondaryError = alertErr || evidenceErr || sarErr;
       if (secondaryError) setLoadError(secondaryError.message);
 
-      setAlert(alertData ?? null);
       setEvidence(evidenceData ?? []);
 
       if (sarData) {

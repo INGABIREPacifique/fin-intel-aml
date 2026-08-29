@@ -30,7 +30,7 @@ export default function CaseDetail() {
     setLoadError("");
     try {
       const [
-        { data: alertData, error: alertErr },
+        { data: alertData, error: _alertErr },
         { data: caseData, error: caseErr },
         { data: nodeData, error: nodeErr },
         { data: edgeData, error: edgeErr },
