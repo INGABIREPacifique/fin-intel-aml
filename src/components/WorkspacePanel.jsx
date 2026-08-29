@@ -62,6 +62,36 @@ export default function WorkspacePanel({ caseCode, onClose }) {
     load();
   }, [caseCode]);
 
+  // Live updates for the case activity log (text notes, file uploads, voice
+  // notes) — previously this only refreshed for the person who posted,
+  // since load() was called manually after posting but no one else's
+  // browser knew to re-fetch. Requires the case_evidence_log table to be
+  // added to the supabase_realtime publication (migration_025).
+  useEffect(() => {
+    if (!caseRecord?.id) return;
+    const channel = supabase
+      .channel(`case-log:${caseRecord.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "case_evidence_log", filter: `case_id=eq.${caseRecord.id}` },
+        async (payload) => {
+          const { data: fullRow } = await supabase
+            .from("case_evidence_log")
+            .select("*, profiles(full_name)")
+            .eq("id", payload.new.id)
+            .maybeSingle();
+          setEvidenceLog((prev) =>
+            prev.some((e) => e.id === payload.new.id) ? prev : [...prev, fullRow ?? payload.new]
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [caseRecord?.id]);
+
   const handleJoin = async () => {
     if (!caseRecord) return;
     await supabase.from("case_task_force").insert({
@@ -73,8 +103,11 @@ export default function WorkspacePanel({ caseCode, onClose }) {
     load();
   };
 
+  const [postError, setPostError] = useState("");
+
   const postMessage = async ({ body, attachment_url, attachment_label, message_type }) => {
-    await supabase.from("case_evidence_log").insert({
+    setPostError("");
+    const { error } = await supabase.from("case_evidence_log").insert({
       case_id: caseRecord.id,
       author_id: session.user.id,
       body: body ?? "",
@@ -82,14 +115,21 @@ export default function WorkspacePanel({ caseCode, onClose }) {
       attachment_label: attachment_label ?? null,
       message_type: message_type ?? "text",
     });
-    load();
+    if (error) {
+      setPostError(`Couldn't post: ${error.message}`);
+      return false;
+    }
+    // No manual reload here — the postgres_changes subscription above picks
+    // up this insert for every viewer, including this browser, so calling
+    // load() too would risk a duplicate render of the same message.
+    return true;
   };
 
   const handlePostNote = async () => {
     if (!noteText.trim() || !caseRecord) return;
     setPosting(true);
-    await postMessage({ body: noteText, message_type: "text" });
-    setNoteText("");
+    const success = await postMessage({ body: noteText, message_type: "text" });
+    if (success) setNoteText("");
     setPosting(false);
   };
 
@@ -97,9 +137,12 @@ export default function WorkspacePanel({ caseCode, onClose }) {
     const file = e.target.files?.[0];
     if (!file || !caseRecord) return;
     setUploading(true);
+    setPostError("");
     const path = `${caseRecord.id}/${Date.now()}-${file.name}`;
     const { error: uploadErr } = await supabase.storage.from("case-evidence").upload(path, file);
-    if (!uploadErr) {
+    if (uploadErr) {
+      setPostError(`Couldn't upload file: ${uploadErr.message}`);
+    } else {
       const { data: pub } = supabase.storage.from("case-evidence").getPublicUrl(path);
       await postMessage({ attachment_url: pub.publicUrl, attachment_label: file.name, message_type: "file" });
     }
@@ -117,8 +160,11 @@ export default function WorkspacePanel({ caseCode, onClose }) {
         const blob = new Blob(chunksRef.current, { type: "audio/webm" });
         const path = `${caseRecord.id}/${Date.now()}-voice-note.webm`;
         setUploading(true);
+        setPostError("");
         const { error: uploadErr } = await supabase.storage.from("case-evidence").upload(path, blob);
-        if (!uploadErr) {
+        if (uploadErr) {
+          setPostError(`Couldn't upload voice note: ${uploadErr.message}`);
+        } else {
           const { data: pub } = supabase.storage.from("case-evidence").getPublicUrl(path);
           await postMessage({ attachment_url: pub.publicUrl, attachment_label: "Voice Note", message_type: "voice" });
         }
@@ -424,6 +470,9 @@ export default function WorkspacePanel({ caseCode, onClose }) {
               </button>
               <span className="font-data-tabular text-data-tabular text-on-surface-variant">Type @ to mention</span>
             </div>
+            {postError && (
+              <p className="font-data-tabular text-data-tabular text-status-critical mb-2">{postError}</p>
+            )}
             <div className="flex gap-2">
               <input
                 value={noteText}

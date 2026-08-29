@@ -25,11 +25,14 @@ export default function VideoCallRoom({ caseCode, session, profile, onClose, sta
   const [camOn, setCamOn] = useState(true);
   const [error, setError] = useState("");
   const [connecting, setConnecting] = useState(true);
+  const [micLevel, setMicLevel] = useState(0); // 0-100, for a real visual mic-input confirmation
 
   const localVideoRef = useRef(null);
   const channelRef = useRef(null);
   const peerConnectionsRef = useRef({}); // { userId: RTCPeerConnection }
   const localStreamRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const animationFrameRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -56,6 +59,25 @@ export default function VideoCallRoom({ caseCode, session, profile, onClose, sta
       localStreamRef.current = stream;
       setLocalStream(stream);
       if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+
+      // Real mic-level meter: analyses actual audio energy from the local
+      // mic track, so the user has a genuine visual way to confirm the
+      // microphone is capturing sound — not a fake/decorative animation.
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      audioContextRef.current = audioCtx;
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 512;
+      const source = audioCtx.createMediaStreamSource(stream);
+      source.connect(analyser);
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+      const readLevel = () => {
+        analyser.getByteFrequencyData(dataArray);
+        const avg = dataArray.reduce((sum, v) => sum + v, 0) / dataArray.length;
+        setMicLevel(Math.min(100, Math.round((avg / 128) * 100)));
+        animationFrameRef.current = requestAnimationFrame(readLevel);
+      };
+      readLevel();
 
       const myId = session.user.id;
       const myName = profile?.full_name ?? "Unknown";
@@ -196,6 +218,12 @@ export default function VideoCallRoom({ caseCode, session, profile, onClose, sta
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
       }
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [caseCode]);
@@ -248,6 +276,14 @@ export default function VideoCallRoom({ caseCode, session, profile, onClose, sta
             <span className="absolute bottom-2 left-2 font-label-caps text-label-caps bg-black/60 text-white px-2 py-0.5 rounded">
               You{!micOn && " · Muted"}
             </span>
+            {micOn && (
+              <div className="absolute bottom-2 right-2 w-16 h-1.5 bg-black/60 rounded overflow-hidden" title="Live mic input level">
+                <div
+                  className="h-full bg-status-success transition-all duration-75"
+                  style={{ width: `${micLevel}%` }}
+                />
+              </div>
+            )}
           </div>
           {remoteList.map(([id, peer]) => (
             <RemoteTile key={id} peer={peer} />
