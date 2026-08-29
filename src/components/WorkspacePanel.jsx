@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../lib/AuthContext";
+import VideoCallRoom from "./VideoCallRoom";
 
 function renderBody(text, taskForce) {
   if (!text) return null;
@@ -137,8 +138,10 @@ export default function WorkspacePanel({ caseCode, onClose }) {
     setRecording(false);
   };
 
+  const [inCall, setInCall] = useState(false);
+
   const handleStartVideoCall = () => {
-    window.open(`https://meet.jit.si/FinIntelAML-${caseCode}`, "_blank");
+    setInCall(true);
   };
 
   const toggleActionItem = async (item) => {
@@ -196,6 +199,15 @@ export default function WorkspacePanel({ caseCode, onClose }) {
   const isMember = taskForce.some((t) => t.member_id === session.user.id);
 
   return (
+    <>
+      {inCall && (
+        <VideoCallRoom
+          caseCode={caseCode}
+          session={session}
+          profile={profile}
+          onClose={() => setInCall(false)}
+        />
+      )}
     <div className="flex flex-col h-full bg-surface-container">
       <div className="flex items-center justify-between p-5 border-b border-surface-border shrink-0">
         <div>
@@ -365,5 +377,6 @@ export default function WorkspacePanel({ caseCode, onClose }) {
         </div>
       </div>
     </div>
+    </>
   );
 }

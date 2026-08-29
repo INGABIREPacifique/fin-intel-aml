@@ -5,6 +5,7 @@ import { MobileNavProvider } from "./lib/MobileNavContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
+import IdleWarningBanner from "./components/IdleWarningBanner";
 import BiometricVerification from "./pages/BiometricVerification";
 import Dashboard from "./pages/Dashboard";
 import CaseDetail from "./pages/CaseDetail";
@@ -40,6 +41,7 @@ export default function App() {
     <ThemeProvider>
     <AuthProvider>
     <MobileNavProvider>
+      <IdleWarningBanner />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
