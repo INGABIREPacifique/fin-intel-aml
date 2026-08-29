@@ -18,7 +18,7 @@ function buildIceServers() {
   return servers;
 }
 
-export default function VideoCallRoom({ caseCode, session, profile, onClose }) {
+export default function VideoCallRoom({ caseCode, session, profile, onClose, statusMessage }) {
   const [localStream, setLocalStream] = useState(null);
   const [remotePeers, setRemotePeers] = useState({}); // { userId: { stream, name } }
   const [micOn, setMicOn] = useState(true);
@@ -258,8 +258,12 @@ export default function VideoCallRoom({ caseCode, session, profile, onClose }) {
             </div>
           )}
           {!connecting && remoteList.length === 0 && (
-            <div className="col-span-full flex items-center justify-center text-on-surface-variant font-data-tabular text-data-tabular py-12">
-              Waiting for other task force members to join this call.
+            <div className="col-span-full flex flex-col items-center justify-center gap-2 text-on-surface-variant font-data-tabular text-data-tabular py-12">
+              {statusMessage ? (
+                <p className="text-status-warning">{statusMessage}</p>
+              ) : (
+                <p>Waiting for other task force members to join this call.</p>
+              )}
             </div>
           )}
         </div>

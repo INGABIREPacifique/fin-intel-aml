@@ -139,9 +139,73 @@ export default function WorkspacePanel({ caseCode, onClose }) {
   };
 
   const [inCall, setInCall] = useState(false);
+  const [incomingCall, setIncomingCall] = useState(null); // { from, fromName }
+  const [callStatusMessage, setCallStatusMessage] = useState("");
+  const ringChannelRef = useRef(null);
+
+  useEffect(() => {
+    const myId = session.user.id;
+    const channel = supabase.channel(`case-ring:${caseCode}`);
+    ringChannelRef.current = channel;
+
+    channel
+      .on("broadcast", { event: "ring" }, ({ payload }) => {
+        if (payload.from === myId) return;
+        setIncomingCall({ from: payload.from, fromName: payload.fromName });
+      })
+      .on("broadcast", { event: "declined" }, ({ payload }) => {
+        if (payload.to !== myId) return;
+        setCallStatusMessage(`${payload.fromName} declined the call.`);
+      })
+      .on("broadcast", { event: "call-ended" }, ({ payload }) => {
+        if (payload.from === myId) return;
+        setIncomingCall((prev) => (prev?.from === payload.from ? null : prev));
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [caseCode, session.user.id]);
 
   const handleStartVideoCall = () => {
+    setCallStatusMessage("");
+    ringChannelRef.current?.send({
+      type: "broadcast",
+      event: "ring",
+      payload: { from: session.user.id, fromName: profile?.full_name ?? "Unknown" },
+    });
     setInCall(true);
+  };
+
+  const handleAcceptCall = () => {
+    setIncomingCall(null);
+    setCallStatusMessage("");
+    setInCall(true);
+  };
+
+  const handleDeclineCall = () => {
+    if (incomingCall) {
+      ringChannelRef.current?.send({
+        type: "broadcast",
+        event: "declined",
+        payload: { from: session.user.id, fromName: profile?.full_name ?? "Unknown", to: incomingCall.from },
+      });
+    }
+    setIncomingCall(null);
+  };
+
+  const handleDismissCall = () => {
+    setIncomingCall(null);
+  };
+
+  const handleCloseCall = () => {
+    ringChannelRef.current?.send({
+      type: "broadcast",
+      event: "call-ended",
+      payload: { from: session.user.id },
+    });
+    setInCall(false);
   };
 
   const toggleActionItem = async (item) => {
@@ -205,8 +269,41 @@ export default function WorkspacePanel({ caseCode, onClose }) {
           caseCode={caseCode}
           session={session}
           profile={profile}
-          onClose={() => setInCall(false)}
+          onClose={handleCloseCall}
+          statusMessage={callStatusMessage}
         />
+      )}
+      {incomingCall && !inCall && (
+        <div className="fixed top-4 right-4 z-[9997] bg-surface-container-high border border-data-focus rounded shadow-2xl p-4 w-80">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="material-symbols-outlined text-data-focus animate-pulse">videocam</span>
+            <p className="font-body-md text-body-md text-on-surface font-semibold">Incoming Case Call</p>
+          </div>
+          <p className="font-data-tabular text-data-tabular text-on-surface-variant mb-3">
+            {incomingCall.fromName} is calling about {caseCode}.
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={handleAcceptCall}
+              className="flex-1 bg-status-success text-on-primary-fixed py-2 rounded font-label-caps text-label-caps font-semibold"
+            >
+              Accept
+            </button>
+            <button
+              onClick={handleDeclineCall}
+              className="flex-1 border border-status-critical text-status-critical py-2 rounded font-label-caps text-label-caps"
+            >
+              Decline
+            </button>
+            <button
+              onClick={handleDismissCall}
+              className="px-3 border border-surface-border text-on-surface-variant py-2 rounded font-label-caps text-label-caps"
+              title="Dismiss without responding"
+            >
+              Ignore
+            </button>
+          </div>
+        </div>
       )}
     <div className="flex flex-col h-full bg-surface-container">
       <div className="flex items-center justify-between p-5 border-b border-surface-border shrink-0">
