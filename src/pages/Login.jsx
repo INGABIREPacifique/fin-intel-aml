@@ -3,13 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/AuthContext";
 
 export default function Login() {
-  const { signIn } = useAuth();
+  const { signIn, resetPassword } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState("login"); // login | reset
+  const [resetMessage, setResetMessage] = useState("");
+  const [resetSending, setResetSending] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,6 +25,17 @@ export default function Login() {
       return;
     }
     navigate("/biometric-verification");
+  };
+
+  const handleReset = async (e) => {
+    e.preventDefault();
+    setResetMessage("");
+    setResetSending(true);
+    const { error } = await resetPassword(email);
+    setResetSending(false);
+    setResetMessage(
+      error ? `Couldn't send reset email: ${error.message}` : "If that email is registered, a password reset link has been sent."
+    );
   };
 
   return (
@@ -109,12 +123,15 @@ export default function Login() {
         <section className="w-full lg:w-7/12 bg-surface-container p-8 lg:p-16 flex flex-col justify-center">
           <div className="mb-10">
             <h2 className="font-headline-lg text-headline-lg text-on-surface mb-2">
-              Staff Authentication
+              {mode === "login" ? "Staff Authentication" : "Reset Password"}
             </h2>
             <p className="font-body-md text-body-md text-on-surface-variant">
-              Verify identity to establish a secure session.
+              {mode === "login"
+                ? "Verify identity to establish a secure session."
+                : "Enter your email and we'll send a link to reset your password."}
             </p>
           </div>
+          {mode === "login" ? (
           <form className="space-y-6 w-full max-w-[420px]" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <label className="block font-label-caps text-label-caps text-on-surface-variant" htmlFor="email">
@@ -136,6 +153,17 @@ export default function Login() {
                 <label className="block font-label-caps text-label-caps text-on-surface-variant" htmlFor="password">
                   Access Key
                 </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode("reset");
+                    setError("");
+                    setResetMessage("");
+                  }}
+                  className="font-label-caps text-label-caps text-data-focus hover:underline"
+                >
+                  Forgot password?
+                </button>
               </div>
               <div className="relative">
                 <input
@@ -176,6 +204,50 @@ export default function Login() {
               </button>
             </div>
           </form>
+          ) : (
+          <form className="space-y-6 w-full max-w-[420px]" onSubmit={handleReset}>
+            <div className="space-y-2">
+              <label className="block font-label-caps text-label-caps text-on-surface-variant" htmlFor="reset-email">
+                Email
+              </label>
+              <input
+                id="reset-email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-primary-container border border-surface-border text-on-surface font-data-tabular text-data-tabular px-4 py-3 focus:outline-none focus:border-data-focus focus:ring-1 focus:ring-data-focus transition-colors rounded-none placeholder:text-outline-variant"
+                placeholder="you@agency.gov"
+              />
+            </div>
+
+            {resetMessage && (
+              <div className="bg-primary-container border border-surface-border p-3 text-sm text-on-surface font-body-md">
+                {resetMessage}
+              </div>
+            )}
+
+            <div className="pt-4 flex gap-3">
+              <button
+                type="submit"
+                disabled={resetSending}
+                className="flex-1 bg-status-success hover:bg-secondary text-surface-container-lowest font-label-caps text-label-caps font-bold py-4 px-6 flex items-center justify-center gap-2 transition-colors border border-transparent rounded-none disabled:opacity-60"
+              >
+                {resetSending ? "SENDING..." : "SEND RESET LINK"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("login");
+                  setResetMessage("");
+                }}
+                className="px-6 py-4 border border-surface-border text-on-surface-variant font-label-caps text-label-caps hover:bg-surface-variant transition-colors rounded-none"
+              >
+                Back
+              </button>
+            </div>
+          </form>
+          )}
         </section>
       </main>
     </div>

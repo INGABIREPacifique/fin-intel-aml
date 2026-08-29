@@ -4,6 +4,7 @@ import { ThemeProvider } from "./lib/ThemeContext";
 import { MobileNavProvider } from "./lib/MobileNavContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
+import ResetPassword from "./pages/ResetPassword";
 import BiometricVerification from "./pages/BiometricVerification";
 import Dashboard from "./pages/Dashboard";
 import CaseDetail from "./pages/CaseDetail";
@@ -43,6 +44,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route
             path="/biometric-verification"
             element={
