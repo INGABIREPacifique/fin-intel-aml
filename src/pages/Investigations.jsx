@@ -27,6 +27,32 @@ export default function Investigations() {
     load();
   }, []);
 
+  // Live updates: a new case being opened, or an existing one changing
+  // status/risk level/assignment, now appears without a manual refresh —
+  // this list is watched by multiple investigators and officers at once.
+  useEffect(() => {
+    const channel = supabase
+      .channel("investigations-live")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "cases" }, async (payload) => {
+        const { data: fullRow } = await supabase
+          .from("cases")
+          .select("*, entities(entity_name, jurisdiction)")
+          .eq("id", payload.new.id)
+          .maybeSingle();
+        if (fullRow) {
+          setCases((prev) => (prev.some((c) => c.id === fullRow.id) ? prev : [fullRow, ...prev]));
+        }
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "cases" }, (payload) => {
+        setCases((prev) => prev.map((c) => (c.id === payload.new.id ? { ...c, ...payload.new } : c)));
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const filtered = cases.filter((c) => statusFilter === "all" || c.status === statusFilter);
 
   const riskColors = {

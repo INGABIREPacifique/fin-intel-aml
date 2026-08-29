@@ -29,6 +29,32 @@ export default function AlertQueue() {
     loadAlerts();
   }, []);
 
+  // Live updates: a new alert firing, or an existing one changing status
+  // (flagged, closed, etc. from any staff member), now appears here without
+  // needing a manual refresh — important for a live monitoring queue.
+  useEffect(() => {
+    const channel = supabase
+      .channel("alert-queue-live")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "alerts" }, async (payload) => {
+        const { data: fullRow } = await supabase
+          .from("alerts")
+          .select("*, entities(entity_name)")
+          .eq("id", payload.new.id)
+          .maybeSingle();
+        if (fullRow) {
+          setAlerts((prev) => (prev.some((a) => a.id === fullRow.id) ? prev : [fullRow, ...prev]));
+        }
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "alerts" }, (payload) => {
+        setAlerts((prev) => prev.map((a) => (a.id === payload.new.id ? { ...a, ...payload.new } : a)));
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const filtered = alerts.filter((a) => {
     const riskOk =
       riskFilter === "all" ||

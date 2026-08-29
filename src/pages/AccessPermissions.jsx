@@ -49,6 +49,24 @@ export default function AccessPermissions() {
     load();
   }, []);
 
+  // Live updates: a new access request coming in, or an existing one being
+  // approved/denied by another admin, now appears without a manual refresh.
+  useEffect(() => {
+    const channel = supabase
+      .channel("access-requests-live")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "access_requests" }, (payload) => {
+        setRequests((prev) => (prev.some((r) => r.id === payload.new.id) ? prev : [...prev, payload.new]));
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "access_requests" }, (payload) => {
+        setRequests((prev) => prev.map((r) => (r.id === payload.new.id ? payload.new : r)));
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const toggleCell = async (permId, level) => {
     const key = `${permId}-${level}`;
     const isGranted = accessMap[key];
