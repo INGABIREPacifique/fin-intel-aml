@@ -7,7 +7,7 @@ import TopNavBar from "../components/TopNavBar";
 
 export default function NewInvestigation() {
   const navigate = useNavigate();
-  const { session } = useAuth();
+  const { session, profile } = useAuth();
 
   const [entityName, setEntityName] = useState("");
   const [entityType, setEntityType] = useState("company");
@@ -62,7 +62,12 @@ export default function NewInvestigation() {
       entity_id: entity.id,
       status: "active",
       risk_level: riskLevel,
-      assigned_to: session.user.id,
+      // Only self-assign when an investigator opens their own case — they
+      // found it, they're working it. A compliance officer or admin
+      // creating a case shouldn't auto-claim it for themselves; it stays
+      // unassigned so they route it to the right investigator via the
+      // Assign picker on the case detail page afterward.
+      assigned_to: profile?.role === "investigator" ? session.user.id : null,
     });
 
     if (caseErr) {
