@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/AuthContext";
 
 export default function Login() {
-  const { signIn, resetPassword } = useAuth();
+  const { signIn, resetPassword, sessionRevoked } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -133,6 +133,11 @@ export default function Login() {
           </div>
           {mode === "login" ? (
           <form className="space-y-6 w-full max-w-[420px]" onSubmit={handleSubmit}>
+            {sessionRevoked && (
+              <div className="bg-status-warning/10 border border-status-warning p-3 text-sm text-status-warning font-body-md">
+                You were signed out because you logged in from another device or browser, which exceeded this account's concurrent session limit.
+              </div>
+            )}
             <div className="space-y-2">
               <label className="block font-label-caps text-label-caps text-on-surface-variant" htmlFor="email">
                 Email

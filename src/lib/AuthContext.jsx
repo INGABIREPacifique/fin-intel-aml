@@ -3,6 +3,18 @@ import { supabase } from "../lib/supabaseClient";
 
 const AuthContext = createContext(null);
 
+// Persisted per-browser-profile (shared across tabs, same as Supabase's own
+// session storage), so multiple tabs of the same browser count as ONE
+// session — matching what "concurrent session" means to a real user.
+function getClientSessionId() {
+  let id = localStorage.getItem("fin_intel_client_session_id");
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem("fin_intel_client_session_id", id);
+  }
+  return id;
+}
+
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(undefined); // undefined = loading, null = no session
   const [profile, setProfile] = useState(null); // includes role
@@ -10,6 +22,7 @@ export function AuthProvider({ children }) {
   const [profileLoading, setProfileLoading] = useState(true);
   const [autoLogoutMinutes, setAutoLogoutMinutes] = useState(null);
   const [idleWarning, setIdleWarning] = useState(false);
+  const [sessionRevoked, setSessionRevoked] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
@@ -103,10 +116,94 @@ export function AuthProvider({ children }) {
     };
   }, [session, autoLogoutMinutes]);
 
+  // Real concurrent-session-limit enforcement (no service_role / admin API
+  // needed, so this is safely client-side and RLS-scoped to each user's own
+  // rows). On login this device registers itself, trims its own older
+  // sessions down to the configured limit, then polls to confirm its own
+  // row still exists — if a later login elsewhere trims this device away,
+  // it signs itself out within one poll interval.
+  useEffect(() => {
+    if (!session?.user?.id) {
+      setSessionRevoked(false);
+      return;
+    }
+
+    let cancelled = false;
+    let pollInterval;
+    const userId = session.user.id;
+    const clientSessionId = getClientSessionId();
+
+    async function registerAndTrim() {
+      const { error: upsertErr } = await supabase
+        .from("active_sessions")
+        .upsert(
+          { user_id: userId, client_session_id: clientSessionId, last_seen_at: new Date().toISOString() },
+          { onConflict: "user_id,client_session_id" }
+        );
+      if (upsertErr || cancelled) return;
+
+      const { data: limitRow } = await supabase
+        .from("system_settings")
+        .select("value")
+        .eq("key", "concurrent_session_limit")
+        .maybeSingle();
+      const limit = limitRow ? Number(limitRow.value) : null;
+      if (!limit || limit <= 0 || cancelled) return;
+
+      const { data: sessions } = await supabase
+        .from("active_sessions")
+        .select("id, client_session_id, created_at")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+      if (!sessions || cancelled) return;
+
+      // Keep the newest `limit` sessions (this device, being freshly
+      // upserted, is always among the newest); delete the rest.
+      const toRemove = sessions.slice(limit);
+      if (toRemove.length > 0) {
+        await supabase.from("active_sessions").delete().in("id", toRemove.map((s) => s.id));
+        await supabase.from("audit_logs").insert({
+          actor_id: userId,
+          action: "concurrent_session_limit_enforced",
+          target_type: "session",
+          details: { note: `Limit ${limit}, removed ${toRemove.length} older session(s)` },
+        });
+      }
+    }
+
+    async function checkStillActive() {
+      const { data, error } = await supabase
+        .from("active_sessions")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("client_session_id", clientSessionId)
+        .maybeSingle();
+      if (cancelled || error) return; // don't act on a transient network error
+      if (!data) {
+        setSessionRevoked(true);
+        clearInterval(pollInterval);
+        localStorage.removeItem("fin_intel_client_session_id");
+        await supabase.auth.signOut();
+      }
+    }
+
+    registerAndTrim();
+    pollInterval = setInterval(checkStillActive, 30_000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(pollInterval);
+    };
+  }, [session]);
+
   const signIn = (email, password) =>
     supabase.auth.signInWithPassword({ email, password });
 
-  const signOut = () => supabase.auth.signOut();
+  const signOut = async () => {
+    const result = await supabase.auth.signOut();
+    localStorage.removeItem("fin_intel_client_session_id");
+    return result;
+  };
 
   const resetPassword = (email) =>
     supabase.auth.resetPasswordForEmail(email, {
@@ -130,6 +227,7 @@ export function AuthProvider({ children }) {
         updatePassword,
         idleWarning,
         autoLogoutMinutes,
+        sessionRevoked,
       }}
     >
       {children}
