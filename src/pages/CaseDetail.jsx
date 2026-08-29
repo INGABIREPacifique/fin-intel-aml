@@ -25,6 +25,11 @@ export default function CaseDetail() {
   const [workspaceOpen, setWorkspaceOpen] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
   const [loadError, setLoadError] = useState("");
+  const [assignPickerOpen, setAssignPickerOpen] = useState(false);
+  const [investigatorOptions, setInvestigatorOptions] = useState([]);
+  const [investigatorsLoading, setInvestigatorsLoading] = useState(false);
+  const [assignError, setAssignError] = useState("");
+  const canAssign = profile?.role === "compliance_officer" || profile?.role === "admin";
 
   const load = async () => {
     setLoadError("");
@@ -93,21 +98,53 @@ export default function CaseDetail() {
   const sweepRatio =
     alert.funds_in && alert.funds_out ? ((alert.funds_out / alert.funds_in) * 100).toFixed(1) : null;
 
-  const handleAssign = async () => {
-    if (!caseRecord) return;
-    const { error } = await supabase.from("cases").update({ assigned_to: session.user.id }).eq("id", caseRecord.id);
-    if (!error) {
-      await supabase.from("audit_logs").insert({
-        actor_id: session.user.id,
-        action: "case_assigned",
-        target_type: "case",
-        target_id: caseRecord.id,
-        target_label: caseCode,
-        details: { note: `Assigned to ${profile?.full_name}` },
+  const handleOpenAssignPicker = async () => {
+    setAssignError("");
+    setAssignPickerOpen(true);
+    setInvestigatorsLoading(true);
+    try {
+      const [{ data: investigators, error: invErr }, { data: activeCases, error: casesErr }] = await Promise.all([
+        supabase.from("profiles").select("id, full_name, operator_id").eq("role", "investigator").order("full_name"),
+        supabase.from("cases").select("assigned_to").eq("status", "active").not("assigned_to", "is", null),
+      ]);
+      if (invErr || casesErr) {
+        setAssignError((invErr || casesErr).message);
+        return;
+      }
+      const loadCounts = {};
+      (activeCases ?? []).forEach((c) => {
+        loadCounts[c.assigned_to] = (loadCounts[c.assigned_to] ?? 0) + 1;
       });
-      setActionMessage(`Assigned to you (${profile?.full_name}).`);
-      load();
+      const withLoad = (investigators ?? [])
+        .map((inv) => ({ ...inv, activeCaseCount: loadCounts[inv.id] ?? 0 }))
+        .sort((a, b) => a.activeCaseCount - b.activeCaseCount);
+      setInvestigatorOptions(withLoad);
+    } catch (err) {
+      setAssignError(err.message);
+    } finally {
+      setInvestigatorsLoading(false);
     }
+  };
+
+  const handleAssignTo = async (investigator) => {
+    if (!caseRecord) return;
+    setAssignError("");
+    const { error } = await supabase.from("cases").update({ assigned_to: investigator.id }).eq("id", caseRecord.id);
+    if (error) {
+      setAssignError(`Couldn't assign case: ${error.message}`);
+      return;
+    }
+    const { error: logErr } = await supabase.from("audit_logs").insert({
+      actor_id: session.user.id,
+      action: "case_assigned",
+      target_type: "case",
+      target_id: caseRecord.id,
+      target_label: caseCode,
+      details: { note: `Assigned to ${investigator.full_name} (${investigator.activeCaseCount} active case(s) at time of assignment)` },
+    });
+    setAssignPickerOpen(false);
+    setActionMessage(logErr ? `Assigned, but audit log failed: ${logErr.message}` : `Assigned to ${investigator.full_name}.`);
+    load();
   };
 
   const handleFalsePositive = async () => {
@@ -333,13 +370,15 @@ export default function CaseDetail() {
               {actionMessage && (
                 <p className="font-data-tabular text-data-tabular text-status-success mb-2">{actionMessage}</p>
               )}
-              <div className="grid grid-cols-[1fr_1fr_1fr_1.5fr] gap-2">
-                <button
-                  onClick={handleAssign}
-                  className="border border-surface-border bg-surface-container rounded font-label-caps text-label-caps text-on-surface py-3 hover:bg-surface-container-high transition-colors"
-                >
-                  ASSIGN
-                </button>
+              <div className={`grid gap-2 ${canAssign ? "grid-cols-[1fr_1fr_1fr_1.5fr]" : "grid-cols-[1fr_1fr_1.5fr]"}`}>
+                {canAssign && (
+                  <button
+                    onClick={handleOpenAssignPicker}
+                    className="border border-surface-border bg-surface-container rounded font-label-caps text-label-caps text-on-surface py-3 hover:bg-surface-container-high transition-colors"
+                  >
+                    {caseRecord?.assigned_to ? "REASSIGN" : "ASSIGN"}
+                  </button>
+                )}
                 <button
                   onClick={handleFalsePositive}
                   className="border border-surface-border bg-surface-container rounded font-label-caps text-label-caps text-on-surface py-3 hover:bg-surface-container-high transition-colors"
@@ -365,6 +404,56 @@ export default function CaseDetail() {
       </div>
       {workspaceOpen && (
         <WorkspaceDrawer caseCode={alert.case_code} onClose={() => setWorkspaceOpen(false)} />
+      )}
+      {assignPickerOpen && (
+        <div className="fixed inset-0 z-[9996] bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-surface-container-high border border-surface-border rounded w-full max-w-md max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between p-5 border-b border-surface-border">
+              <h3 className="font-headline-sm text-headline-sm text-on-surface">Assign Investigator</h3>
+              <button onClick={() => setAssignPickerOpen(false)} className="text-on-surface-variant hover:text-on-surface">
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
+            <div className="p-5 overflow-y-auto flex-1">
+              {assignError && (
+                <p className="font-data-tabular text-data-tabular text-status-critical mb-3">{assignError}</p>
+              )}
+              {investigatorsLoading ? (
+                <p className="font-data-tabular text-data-tabular text-on-surface-variant">Loading investigators...</p>
+              ) : investigatorOptions.length === 0 ? (
+                <p className="font-data-tabular text-data-tabular text-on-surface-variant">No investigators found.</p>
+              ) : (
+                <div className="space-y-2">
+                  {investigatorOptions.map((inv, i) => (
+                    <button
+                      key={inv.id}
+                      onClick={() => handleAssignTo(inv)}
+                      className="w-full flex items-center justify-between p-3 rounded border border-surface-border hover:border-data-focus hover:bg-surface-container transition-colors text-left"
+                    >
+                      <div>
+                        <p className="font-body-md text-body-md text-on-surface font-semibold">
+                          {inv.full_name} {i === 0 && <span className="font-label-caps text-label-caps text-status-success ml-1">SUGGESTED</span>}
+                        </p>
+                        <p className="font-data-tabular text-data-tabular text-on-surface-variant">{inv.operator_id}</p>
+                      </div>
+                      <span
+                        className={`font-label-caps text-label-caps px-2 py-1 rounded border ${
+                          inv.activeCaseCount === 0
+                            ? "text-status-success border-status-success"
+                            : inv.activeCaseCount <= 2
+                            ? "text-status-warning border-status-warning"
+                            : "text-status-critical border-status-critical"
+                        }`}
+                      >
+                        {inv.activeCaseCount} active
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
