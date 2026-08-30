@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useRealtimeRefresh } from "../lib/useRealtimeRefresh";
 import { useAuth } from "../lib/AuthContext";
 import Sidebar from "../components/Sidebar";
 import TopNavBar from "../components/TopNavBar";
@@ -102,34 +103,37 @@ export default function GraphExplorer() {
   const [cycleDetection, setCycleDetection] = useState(false);
   const [communityDetection, setCommunityDetection] = useState(false);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [
-          { data: entityData, error: entityErr },
-          { data: relData, error: relErr },
-          { data: alertData, error: alertErr },
-        ] = await Promise.all([
-          supabase.from("entities").select("*"),
-          supabase.from("entity_relationships").select("*"),
-          supabase.from("alerts").select("entity_id, risk_score, pattern"),
-        ]);
-        const firstError = entityErr || relErr || alertErr;
-        if (firstError) {
-          setErrorMessage(`Couldn't load graph data: ${firstError.message}`);
-        } else {
-          setEntities(entityData ?? []);
-          setRelationships(relData ?? []);
-          setAlerts(alertData ?? []);
-        }
-      } catch (err) {
-        setErrorMessage(`Couldn't load graph data: ${err.message}`);
-      } finally {
-        setLoading(false);
+  const load = async () => {
+    try {
+      const [
+        { data: entityData, error: entityErr },
+        { data: relData, error: relErr },
+        { data: alertData, error: alertErr },
+      ] = await Promise.all([
+        supabase.from("entities").select("*"),
+        supabase.from("entity_relationships").select("*"),
+        supabase.from("alerts").select("entity_id, risk_score, pattern"),
+      ]);
+      const firstError = entityErr || relErr || alertErr;
+      if (firstError) {
+        setErrorMessage(`Couldn't load graph data: ${firstError.message}`);
+      } else {
+        setEntities(entityData ?? []);
+        setRelationships(relData ?? []);
+        setAlerts(alertData ?? []);
       }
+    } catch (err) {
+      setErrorMessage(`Couldn't load graph data: ${err.message}`);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     load();
   }, []);
+
+  useRealtimeRefresh(["entities", "entity_relationships", "alerts"], load);
 
   const riskByEntity = useMemo(() => {
     const map = {};

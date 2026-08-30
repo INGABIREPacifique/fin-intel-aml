@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import { useRealtimeRefresh } from "../lib/useRealtimeRefresh";
 import Sidebar from "../components/Sidebar";
 import TopNavBar from "../components/TopNavBar";
 import JurisdictionMap from "../components/JurisdictionMap";
@@ -83,30 +84,33 @@ export default function Dashboard() {
   const [activeInstitutions, setActiveInstitutions] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  const loadData = async () => {
+    const [
+      { data: alertData, error: alertErr },
+      { count: resolvedCountResult },
+      { data: metricData },
+      { data: trendData },
+      { count: activeInstitutionCount, error: instErr },
+    ] = await Promise.all([
+      supabase.from("alerts").select("*, entities(entity_name, jurisdiction)").order("risk_score", { ascending: false }),
+      supabase.from("cases").select("*", { count: "exact", head: true }).eq("status", "resolved"),
+      supabase.from("demo_metrics").select("*").eq("key", "false_positive_rate").maybeSingle(),
+      supabase.from("demo_pattern_trends").select("*").order("week_order", { ascending: true }),
+      supabase.from("institutions").select("*", { count: "exact", head: true }).eq("status", "active"),
+    ]);
+    if (!alertErr) setAlerts(alertData);
+    setResolvedCount(resolvedCountResult ?? 0);
+    setDemoMetric(metricData);
+    setDemoTrends(trendData ?? []);
+    if (!instErr) setActiveInstitutions(activeInstitutionCount ?? 0);
+    setLoading(false);
+  };
+
   useEffect(() => {
-    async function loadData() {
-      const [
-        { data: alertData, error: alertErr },
-        { count: resolvedCountResult },
-        { data: metricData },
-        { data: trendData },
-        { count: activeInstitutionCount, error: instErr },
-      ] = await Promise.all([
-        supabase.from("alerts").select("*, entities(entity_name, jurisdiction)").order("risk_score", { ascending: false }),
-        supabase.from("cases").select("*", { count: "exact", head: true }).eq("status", "resolved"),
-        supabase.from("demo_metrics").select("*").eq("key", "false_positive_rate").maybeSingle(),
-        supabase.from("demo_pattern_trends").select("*").order("week_order", { ascending: true }),
-        supabase.from("institutions").select("*", { count: "exact", head: true }).eq("status", "active"),
-      ]);
-      if (!alertErr) setAlerts(alertData);
-      setResolvedCount(resolvedCountResult ?? 0);
-      setDemoMetric(metricData);
-      setDemoTrends(trendData ?? []);
-      if (!instErr) setActiveInstitutions(activeInstitutionCount ?? 0);
-      setLoading(false);
-    }
     loadData();
   }, []);
+
+  useRealtimeRefresh(["alerts", "cases", "institutions"], loadData);
 
   const highRiskCount = alerts.filter((a) => a.risk_score >= 90).length;
   const totalVolumeProcessed = alerts.reduce((sum, a) => sum + Number(a.volume ?? 0), 0);

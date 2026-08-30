@@ -55,6 +55,8 @@ export default function InstitutionProfile() {
     load();
   }, [code]);
 
+  useRealtimeRefresh(["institutions", "institution_legal_agreements"], load);
+
   const handleScheduleAudit = async () => {
     if (!institution) return;
     const nextDate = new Date();

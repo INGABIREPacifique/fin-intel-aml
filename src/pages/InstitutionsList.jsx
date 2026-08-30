@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import { useRealtimeRefresh } from "../lib/useRealtimeRefresh";
 import Sidebar from "../components/Sidebar";
 import TopNavBar from "../components/TopNavBar";
 
@@ -10,18 +11,21 @@ export default function InstitutionsList() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
-  useEffect(() => {
-    async function load() {
-      const { data, error } = await supabase.from("institutions").select("*").order("name");
-      if (error) {
-        setErrorMessage(error.message);
-      } else {
-        setInstitutions(data);
-      }
-      setLoading(false);
+  const load = async () => {
+    const { data, error } = await supabase.from("institutions").select("*").order("name");
+    if (error) {
+      setErrorMessage(error.message);
+    } else {
+      setInstitutions(data);
     }
+    setLoading(false);
+  };
+
+  useEffect(() => {
     load();
   }, []);
+
+  useRealtimeRefresh(["institutions"], load);
 
   return (
     <div className="min-h-screen bg-background text-on-surface flex">

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useRealtimeRefresh } from "../lib/useRealtimeRefresh";
 import { useAuth } from "../lib/AuthContext";
 import Sidebar from "../components/Sidebar";
 import TopNavBar from "../components/TopNavBar";
@@ -58,6 +59,8 @@ export default function DataHealth() {
   useEffect(() => {
     load();
   }, []);
+
+  useRealtimeRefresh(["institutions", "entity_resolution_audit", "entities", "alerts", "cases"], load);
 
   const handleSyncNow = async () => {
     setSyncing(true);

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import { useRealtimeRefresh } from "../lib/useRealtimeRefresh";
 import Sidebar from "../components/Sidebar";
 import TopNavBar from "../components/TopNavBar";
 
@@ -11,28 +12,31 @@ export default function NetworkAnalysis() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [{ data: anomalyData, error: anomalyErr }, { data: alertData, error: alertErr }] = await Promise.all([
-          supabase.from("cross_market_anomalies").select("*").order("sort_order"),
-          supabase.from("alerts").select("pattern, risk_score"),
-        ]);
-        const firstError = anomalyErr || alertErr;
-        if (firstError) {
-          setErrorMessage(`Couldn't load network analysis data: ${firstError.message}`);
-        } else {
-          setAnomalies(anomalyData ?? []);
-          setAlerts(alertData ?? []);
-        }
-      } catch (err) {
-        setErrorMessage(`Couldn't load network analysis data: ${err.message}`);
-      } finally {
-        setLoading(false);
+  const load = async () => {
+    try {
+      const [{ data: anomalyData, error: anomalyErr }, { data: alertData, error: alertErr }] = await Promise.all([
+        supabase.from("cross_market_anomalies").select("*").order("sort_order"),
+        supabase.from("alerts").select("pattern, risk_score"),
+      ]);
+      const firstError = anomalyErr || alertErr;
+      if (firstError) {
+        setErrorMessage(`Couldn't load network analysis data: ${firstError.message}`);
+      } else {
+        setAnomalies(anomalyData ?? []);
+        setAlerts(alertData ?? []);
       }
+    } catch (err) {
+      setErrorMessage(`Couldn't load network analysis data: ${err.message}`);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     load();
   }, []);
+
+  useRealtimeRefresh(["cross_market_anomalies", "alerts"], load);
 
   // Real (simplified) correlation: how often each pair of distinct patterns
   // co-occur weighted by risk. Grounded in actual alert data, not fabricated

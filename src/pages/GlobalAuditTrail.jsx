@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useRealtimeRefresh } from "../lib/useRealtimeRefresh";
 import { useAuth } from "../lib/AuthContext";
 import Sidebar from "../components/Sidebar";
 import TopNavBar from "../components/TopNavBar";
@@ -12,22 +13,36 @@ export default function GlobalAuditTrail() {
   const [selected, setSelected] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
 
-  useEffect(() => {
-    async function load() {
-      const { data, error } = await supabase
-        .from("audit_logs")
-        .select("*, profiles(full_name)")
-        .order("created_at", { ascending: false });
-      if (error) {
-        setErrorMessage(error.message);
-      } else {
-        setEntries(data);
-        if (data.length > 0) setSelected(data[0]);
-      }
-      setLoading(false);
+  const load = async () => {
+    const { data, error } = await supabase
+      .from("audit_logs")
+      .select("*, profiles(full_name)")
+      .order("created_at", { ascending: false });
+    if (error) {
+      setErrorMessage(error.message);
+    } else {
+      setEntries(data);
+      // Live refreshes shouldn't yank the analyst's current selection back
+      // to the newest entry — audit logs are written constantly by almost
+      // every action in the app, so keep whatever was selected if it still
+      // exists in the refreshed data, only defaulting to the newest on the
+      // very first load.
+      setSelected((prev) => {
+        if (prev) {
+          const stillThere = data.find((e) => e.id === prev.id);
+          if (stillThere) return stillThere;
+        }
+        return data.length > 0 ? data[0] : null;
+      });
     }
+    setLoading(false);
+  };
+
+  useEffect(() => {
     load();
   }, []);
+
+  useRealtimeRefresh(["audit_logs"], load);
 
   const actionTypes = ["all", ...new Set(entries.map((e) => e.action))];
   const filtered = actionFilter === "all" ? entries : entries.filter((e) => e.action === actionFilter);

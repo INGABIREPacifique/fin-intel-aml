@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import { useRealtimeRefresh } from "../lib/useRealtimeRefresh";
 import Sidebar from "../components/Sidebar";
 import TopNavBar from "../components/TopNavBar";
 
@@ -103,6 +104,8 @@ export default function EntityProfile() {
     load();
     setSelectedNeighborId(null);
   }, [id]);
+
+  useRealtimeRefresh(["alerts", "entities", "entity_relationships"], load);
 
   const filteredRelationships = useMemo(() => {
     const cutoff = new Date();

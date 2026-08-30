@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import { useRealtimeRefresh } from "../lib/useRealtimeRefresh";
 import Sidebar from "../components/Sidebar";
 import TopNavBar from "../components/TopNavBar";
 
@@ -25,6 +26,8 @@ export default function EntitySearch() {
   useEffect(() => {
     load();
   }, []);
+
+  useRealtimeRefresh(["entities"], load);
 
   const toggleWatchlist = async (entity) => {
     setErrorMessage("");
