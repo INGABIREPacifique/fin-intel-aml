@@ -30,6 +30,8 @@ export default function CaseDetail() {
   const [investigatorsLoading, setInvestigatorsLoading] = useState(false);
   const [assignError, setAssignError] = useState("");
   const canAssign = profile?.role === "compliance_officer" || profile?.role === "admin";
+  const [explanationLoading, setExplanationLoading] = useState(false);
+  const [explanationError, setExplanationError] = useState("");
 
   const load = async () => {
     setLoadError("");
@@ -97,6 +99,29 @@ export default function CaseDetail() {
   const nodeByKey = Object.fromEntries(nodes.map((n) => [n.node_key, n]));
   const sweepRatio =
     alert.funds_in && alert.funds_out ? ((alert.funds_out / alert.funds_in) * 100).toFixed(1) : null;
+
+  const handleGenerateExplanation = async () => {
+    setExplanationLoading(true);
+    setExplanationError("");
+    const { data, error } = await supabase.functions.invoke("explain-alert", {
+      body: { alert_id: alert.id },
+    });
+    setExplanationLoading(false);
+    if (error) {
+      setExplanationError(`Couldn't generate explanation: ${error.message}`);
+      return;
+    }
+    if (data?.error) {
+      setExplanationError(`Couldn't generate explanation: ${data.error}`);
+      return;
+    }
+    setAlert((prev) => ({
+      ...prev,
+      ai_explanation: data.explanation,
+      ai_explanation_source: data.source,
+      ai_explanation_generated_at: new Date().toISOString(),
+    }));
+  };
 
   const handleOpenAssignPicker = async () => {
     setAssignError("");
@@ -325,6 +350,46 @@ export default function CaseDetail() {
                     </span>
                   </div>
                 )}
+              </div>
+
+              <div className="bg-surface-container border border-surface-border rounded p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="font-label-caps text-label-caps text-on-surface-variant flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[16px]">smart_toy</span>
+                    ANALYST EXPLANATION
+                  </p>
+                  {alert.ai_explanation_source && (
+                    <span
+                      className={`font-label-caps text-label-caps px-2 py-0.5 rounded border ${
+                        alert.ai_explanation_source === "anthropic"
+                          ? "text-data-focus border-data-focus"
+                          : "text-on-surface-variant border-surface-border"
+                      }`}
+                    >
+                      {alert.ai_explanation_source === "anthropic" ? "AI GENERATED" : "RULE-BASED ANALYSIS"}
+                    </span>
+                  )}
+                </div>
+
+                {explanationError && (
+                  <p className="font-data-tabular text-data-tabular text-status-critical">{explanationError}</p>
+                )}
+
+                {alert.ai_explanation ? (
+                  <p className="font-body-md text-body-md text-on-surface">{alert.ai_explanation}</p>
+                ) : (
+                  <p className="font-data-tabular text-data-tabular text-on-surface-variant">
+                    No explanation generated yet.
+                  </p>
+                )}
+
+                <button
+                  onClick={handleGenerateExplanation}
+                  disabled={explanationLoading}
+                  className="border border-outline text-on-surface-variant px-4 py-2 rounded font-label-caps text-label-caps hover:bg-surface-variant transition-colors disabled:opacity-60"
+                >
+                  {explanationLoading ? "Generating..." : alert.ai_explanation ? "Regenerate" : "Generate Explanation"}
+                </button>
               </div>
             </div>
 
