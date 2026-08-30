@@ -25,6 +25,9 @@ export default function EntityProfile() {
   const navigate = useNavigate();
 
   const [entity, setEntity] = useState(null);
+  const [sanctionsMatches, setSanctionsMatches] = useState([]);
+  const [sanctionsError, setSanctionsError] = useState("");
+  const [sanctionsChecked, setSanctionsChecked] = useState(false);
   const [relationships, setRelationships] = useState([]);
   const [neighborEntities, setNeighborEntities] = useState({});
   const [alert, setAlert] = useState(null);
@@ -57,6 +60,21 @@ export default function EntityProfile() {
       if (!entityData) {
         setLoading(false);
         return;
+      }
+
+      // Real fuzzy-name screening against the sanctions_watchlist table
+      // (see migration_027 and the sync-sanctions-list Edge Function) —
+      // returns nothing until that table has been synced with real OFAC
+      // data, but the screening logic itself is real, not simulated.
+      const { data: sanctionsData, error: sanctionsErr } = await supabase.rpc(
+        "screen_name_against_sanctions",
+        { query_name: entityData.entity_name }
+      );
+      setSanctionsChecked(true);
+      if (sanctionsErr) {
+        setSanctionsError(sanctionsErr.message);
+      } else {
+        setSanctionsMatches(sanctionsData ?? []);
       }
 
       const [{ data: relData, error: relErr }, { data: alertData, error: alertErr }] = await Promise.all([
@@ -480,6 +498,39 @@ export default function EntityProfile() {
                 <span className="text-on-surface-variant">Total Outbound</span>
               </div>
               <p className="font-headline-lg text-headline-lg text-on-surface">{formatUSD(totals.outbound)}</p>
+            </div>
+
+            <div className="p-5 border-t border-surface-border">
+              <h3 className="font-label-caps text-label-caps text-on-surface uppercase flex items-center gap-2 mb-3">
+                <span className="material-symbols-outlined text-[16px]">gpp_maybe</span>
+                Sanctions Screening
+              </h3>
+              {sanctionsError && (
+                <p className="font-data-tabular text-data-tabular text-status-critical">{sanctionsError}</p>
+              )}
+              {!sanctionsError && sanctionsChecked && sanctionsMatches.length === 0 && (
+                <p className="font-data-tabular text-data-tabular text-status-success">
+                  No matches found against the synced watchlist.
+                </p>
+              )}
+              {sanctionsMatches.length > 0 && (
+                <div className="space-y-2">
+                  {sanctionsMatches.map((m) => (
+                    <div key={m.id} className="border border-status-critical rounded p-2">
+                      <p className="font-body-md text-body-md text-on-surface font-semibold">{m.name}</p>
+                      <p className="font-data-tabular text-data-tabular text-on-surface-variant">
+                        {m.source} · {(m.similarity_score * 100).toFixed(0)}% match · {m.programs}
+                      </p>
+                    </div>
+                  ))}
+                  <p className="font-data-tabular text-data-tabular text-status-warning">
+                    Every fuzzy match requires human review — this is not a compliance decision.
+                  </p>
+                </div>
+              )}
+              <p className="font-label-caps text-label-caps text-on-surface-variant mt-2">
+                Screens against synced OFAC SDN data (real government source once the sync function has run).
+              </p>
             </div>
           </aside>
         </main>

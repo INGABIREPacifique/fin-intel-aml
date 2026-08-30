@@ -25,8 +25,29 @@ export default function InstitutionOnboarding() {
   const [zones, setZones] = useState({ "North America": true, EMEA: true, APAC: false, LATAM: false });
   const [environment, setEnvironment] = useState("production");
   const [apiVersion, setApiVersion] = useState("v1.0.0");
+  const [sanctionsMatches, setSanctionsMatches] = useState([]);
+  const [sanctionsChecking, setSanctionsChecking] = useState(false);
+  const [sanctionsAcknowledged, setSanctionsAcknowledged] = useState(false);
+  const [sanctionsError, setSanctionsError] = useState("");
 
   const toggleZone = (z) => setZones({ ...zones, [z]: !zones[z] });
+
+  const handleContinueFromIdentity = async () => {
+    if (sanctionsMatches.length > 0 && !sanctionsAcknowledged) return; // already showing the warning, wait for acknowledgment
+    setSanctionsError("");
+    setSanctionsChecking(true);
+    const { data, error } = await supabase.rpc("screen_name_against_sanctions", { query_name: name });
+    setSanctionsChecking(false);
+    if (error) {
+      setSanctionsError(error.message);
+      return; // don't silently proceed if the screening call itself failed
+    }
+    if ((data ?? []).length > 0 && !sanctionsAcknowledged) {
+      setSanctionsMatches(data);
+      return; // block progression until the officer explicitly acknowledges
+    }
+    setStep(step + 1);
+  };
 
   const handleFinish = async () => {
     setSaving(true);
@@ -181,6 +202,36 @@ export default function InstitutionOnboarding() {
                       ))}
                     </div>
                   </div>
+
+                  {sanctionsError && (
+                    <p className="font-data-tabular text-data-tabular text-status-critical mt-4">{sanctionsError}</p>
+                  )}
+
+                  {sanctionsMatches.length > 0 && !sanctionsAcknowledged && (
+                    <div className="mt-4 border-2 border-status-critical bg-status-critical/10 rounded p-4">
+                      <p className="font-body-md text-body-md text-status-critical font-semibold mb-2 flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[18px]">gpp_maybe</span>
+                        Possible sanctions list match — review before proceeding
+                      </p>
+                      <div className="space-y-2 mb-3">
+                        {sanctionsMatches.map((m) => (
+                          <div key={m.id} className="font-data-tabular text-data-tabular text-on-surface">
+                            {m.name} — {m.source} · {(m.similarity_score * 100).toFixed(0)}% match · {m.programs}
+                          </div>
+                        ))}
+                      </div>
+                      <p className="font-data-tabular text-data-tabular text-on-surface-variant mb-3">
+                        This is a fuzzy name match, not a confirmed identity — requires human review before this
+                        institution can be onboarded.
+                      </p>
+                      <button
+                        onClick={() => setSanctionsAcknowledged(true)}
+                        className="border border-status-critical text-status-critical px-4 py-2 rounded font-label-caps text-label-caps"
+                      >
+                        Reviewed — Acknowledge and Continue
+                      </button>
+                    </div>
+                  )}
                 </>
               )}
 
@@ -240,11 +291,11 @@ export default function InstitutionOnboarding() {
               )}
               {step < 3 ? (
                 <button
-                  onClick={() => setStep(step + 1)}
-                  disabled={step === 1 && !name}
+                  onClick={step === 1 ? handleContinueFromIdentity : () => setStep(step + 1)}
+                  disabled={(step === 1 && !name) || sanctionsChecking}
                   className="bg-secondary text-on-secondary px-6 py-2 rounded font-label-caps text-label-caps font-semibold disabled:opacity-50"
                 >
-                  Save &amp; Continue
+                  {sanctionsChecking ? "Screening..." : "Save & Continue"}
                 </button>
               ) : (
                 <button
