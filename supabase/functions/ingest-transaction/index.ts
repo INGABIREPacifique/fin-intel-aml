@@ -131,16 +131,26 @@ Deno.serve(async (req) => {
 
   if (insertErr) return jsonResponse({ error: insertErr.message }, 500);
 
-  // Real rapid-pass-through detection against this entity's transaction
-  // history, not a fabricated result — computed from the actual rows just
-  // ingested plus whatever was ingested before.
-  const detectionResult = await runRapidPassThroughCheck(supabase, payload.receiver_name, insertedTxn.id);
+  // Real rapid-pass-through detection — checked against BOTH parties on
+  // this transaction, not just the receiver. A single transaction can be
+  // the inbound leg completing the receiver's pattern, or the outbound leg
+  // completing the sender's pattern (a sender who received funds earlier
+  // and is now sweeping them out is exactly the case this rule exists to
+  // catch), so both names need to be checked, not only one.
+  const receiverResult = await runRapidPassThroughCheck(supabase, payload.receiver_name, insertedTxn.id);
+  const senderResult =
+    payload.sender_name && payload.sender_name !== payload.receiver_name
+      ? await runRapidPassThroughCheck(supabase, payload.sender_name, insertedTxn.id)
+      : { flagged: false, alertId: null };
+
+  const flagged = receiverResult.flagged || senderResult.flagged;
+  const alertId = receiverResult.alertId ?? senderResult.alertId ?? null;
 
   return jsonResponse({
     success: true,
     transaction_id: insertedTxn.id,
-    flagged: detectionResult.flagged,
-    alert_id: detectionResult.alertId,
+    flagged,
+    alert_id: alertId,
   });
 });
 
