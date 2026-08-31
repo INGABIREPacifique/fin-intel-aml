@@ -200,6 +200,9 @@ async function runRapidPassThroughCheck(supabase, entityName, currentTxnId) {
   const entityId = matchedEntities?.[0]?.id ?? null;
   if (!entityId) return { flagged: true, alertId: null };
 
+  const riskScore = Math.min(99, Math.round(60 + sweepRatio * 35));
+  const narrative = `Automated detection: this entity received $${fundsIn.toLocaleString()} and sent out $${fundsOut.toLocaleString()} (${(sweepRatio * 100).toFixed(1)}% sweep) within a ${RAPID_PASS_THROUGH_WINDOW_HOURS}-hour window across ${(inbound ?? []).length + (outbound ?? []).length} ingested transaction(s), consistent with rapid pass-through / layering behavior.`;
+
   const { data: existingOpenAlert } = await supabase
     .from("alerts")
     .select("id")
@@ -207,9 +210,28 @@ async function runRapidPassThroughCheck(supabase, entityName, currentTxnId) {
     .eq("pattern", "Rapid Pass-Through (Automated Detection)")
     .eq("status", "open")
     .maybeSingle();
-  if (existingOpenAlert) return { flagged: true, alertId: existingOpenAlert.id };
 
-  const riskScore = Math.min(99, Math.round(60 + sweepRatio * 35));
+  if (existingOpenAlert) {
+    // An open alert for this exact pattern already exists — update it with
+    // the latest real totals rather than leaving it frozen at whatever the
+    // figures were when it was first created. An analyst reviewing an
+    // ongoing pattern needs to see current activity, not a stale snapshot.
+    const { error: updateErr } = await supabase
+      .from("alerts")
+      .update({
+        risk_score: riskScore,
+        volume: fundsIn,
+        funds_in: fundsIn,
+        funds_out: fundsOut,
+        narrative,
+      })
+      .eq("id", existingOpenAlert.id);
+    if (!updateErr) {
+      await supabase.from("transaction_ingestion_log").update({ flagged: true, resulting_alert_id: existingOpenAlert.id }).eq("id", currentTxnId);
+    }
+    return { flagged: true, alertId: existingOpenAlert.id };
+  }
+
   const caseCode = `CASE-AUTO-${Date.now().toString().slice(-8)}`;
 
   const { data: newAlert, error: alertErr } = await supabase
@@ -224,7 +246,7 @@ async function runRapidPassThroughCheck(supabase, entityName, currentTxnId) {
       status: "open",
       funds_in: fundsIn,
       funds_out: fundsOut,
-      narrative: `Automated detection: this entity received $${fundsIn.toLocaleString()} and sent out $${fundsOut.toLocaleString()} (${(sweepRatio * 100).toFixed(1)}% sweep) within a ${RAPID_PASS_THROUGH_WINDOW_HOURS}-hour window across ${(inbound ?? []).length + (outbound ?? []).length} ingested transaction(s), consistent with rapid pass-through / layering behavior.`,
+      narrative,
     })
     .select()
     .single();
