@@ -26,10 +26,21 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// Required for browser-based calls (supabase.functions.invoke from the app
+// itself). Without these, the browser's preflight OPTIONS request and the
+// actual response both get blocked by CORS before the function's own logic
+// ever runs — the fetch fails client-side with a generic "failed to send a
+// request" error, which is exactly what happened in live testing before
+// this was added.
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...corsHeaders },
   });
 }
 
@@ -111,6 +122,9 @@ async function buildAnthropicExplanation(apiKey, { alert, entity, relationships,
 }
 
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
   if (req.method !== "POST") {
     return jsonResponse({ error: "Only POST is supported." }, 405);
   }

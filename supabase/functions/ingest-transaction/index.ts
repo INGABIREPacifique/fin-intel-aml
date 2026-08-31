@@ -57,14 +57,25 @@ const RAPID_PASS_THROUGH_WINDOW_HOURS = 48;
 const RAPID_PASS_THROUGH_MIN_SWEEP_RATIO = 0.85;
 const RAPID_PASS_THROUGH_MIN_AMOUNT = 10000;
 
+// Institution systems calling this server-to-server don't hit browser CORS
+// restrictions, but this is added for consistency and in case any caller
+// ever does invoke it from a browser context.
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...corsHeaders },
   });
 }
 
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
   if (req.method !== "POST") {
     return jsonResponse({ error: "Only POST is supported." }, 405);
   }
