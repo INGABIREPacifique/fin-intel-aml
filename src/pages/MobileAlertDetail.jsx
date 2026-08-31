@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import { useRealtimeRefresh } from "../lib/useRealtimeRefresh";
 import { useAuth } from "../lib/AuthContext";
 
 export default function MobileAlertDetail() {
@@ -64,6 +65,8 @@ export default function MobileAlertDetail() {
   useEffect(() => {
     load();
   }, [caseCode]);
+
+  useRealtimeRefresh(["alerts", "entity_relationships"], load);
 
   const handleAction = async (actionType) => {
     setMessage("");

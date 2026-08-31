@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import { useRealtimeRefresh } from "../lib/useRealtimeRefresh";
 
 function timeAgo(dateStr) {
   const diffMs = Date.now() - new Date(dateStr).getTime();
@@ -18,28 +19,31 @@ export default function MobileFieldHub() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [{ data: alertData, error: alertErr }, { data: instData, error: instErr }] = await Promise.all([
-          supabase.from("alerts").select("*, entities(entity_name)").order("created_at", { ascending: false }),
-          supabase.from("institutions").select("*"),
-        ]);
-        const firstError = alertErr || instErr;
-        if (firstError) {
-          setErrorMessage(`Couldn't load field hub data: ${firstError.message}`);
-        } else {
-          setAlerts(alertData ?? []);
-          setInstitutions(instData ?? []);
-        }
-      } catch (err) {
-        setErrorMessage(`Couldn't load field hub data: ${err.message}`);
-      } finally {
-        setLoading(false);
+  const load = async () => {
+    try {
+      const [{ data: alertData, error: alertErr }, { data: instData, error: instErr }] = await Promise.all([
+        supabase.from("alerts").select("*, entities(entity_name)").order("created_at", { ascending: false }),
+        supabase.from("institutions").select("*"),
+      ]);
+      const firstError = alertErr || instErr;
+      if (firstError) {
+        setErrorMessage(`Couldn't load field hub data: ${firstError.message}`);
+      } else {
+        setAlerts(alertData ?? []);
+        setInstitutions(instData ?? []);
       }
+    } catch (err) {
+      setErrorMessage(`Couldn't load field hub data: ${err.message}`);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     load();
   }, []);
+
+  useRealtimeRefresh(["alerts", "institutions"], load);
 
   const activeCases = alerts.filter((a) => a.status !== "closed").length;
   const highRisk = alerts.filter((a) => a.risk_score >= 90).length;

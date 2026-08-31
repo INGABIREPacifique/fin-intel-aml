@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useRealtimeRefresh } from "../lib/useRealtimeRefresh";
 import { useAuth } from "../lib/AuthContext";
 import AdminSidebar from "../components/AdminSidebar";
 import TopNavBar from "../components/TopNavBar";
@@ -51,6 +52,8 @@ export default function ApiGateway() {
   useEffect(() => {
     load();
   }, []);
+
+  useRealtimeRefresh(["institutions", "api_keys"], load);
 
   const handleGenerateKey = async () => {
     if (!alias.trim()) return;

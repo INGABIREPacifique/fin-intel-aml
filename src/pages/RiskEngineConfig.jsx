@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import { useRealtimeRefresh } from "../lib/useRealtimeRefresh";
 import { useAuth } from "../lib/AuthContext";
 import Sidebar from "../components/Sidebar";
 import TopNavBar from "../components/TopNavBar";
@@ -60,6 +61,8 @@ export default function RiskEngineConfig() {
   useEffect(() => {
     load();
   }, []);
+
+  useRealtimeRefresh(["risk_models", "market_patterns", "simulation_runs"], load);
 
   const totalFlags = models.reduce((sum, m) => sum + (m.flags_30d ?? 0), 0);
   const avgPrecision = models.length ? (models.reduce((s, m) => s + Number(m.precision ?? 0), 0) / models.length).toFixed(1) : "—";

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import { useRealtimeRefresh } from "../lib/useRealtimeRefresh";
 import { useAuth } from "../lib/AuthContext";
 import Sidebar from "../components/Sidebar";
 import TopNavBar from "../components/TopNavBar";
@@ -98,6 +99,8 @@ export default function SarFiling() {
   useEffect(() => {
     load();
   }, [caseCode]);
+
+  useRealtimeRefresh(["alerts", "cases", "case_evidence", "sar_filings"], load);
 
   const handleSaveDraft = async () => {
     setSaving(true);

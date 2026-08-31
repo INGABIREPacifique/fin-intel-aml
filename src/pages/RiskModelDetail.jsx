@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import { useRealtimeRefresh } from "../lib/useRealtimeRefresh";
 import { useAuth } from "../lib/AuthContext";
 import Sidebar from "../components/Sidebar";
 import TopNavBar from "../components/TopNavBar";
@@ -57,6 +58,8 @@ export default function RiskModelDetail() {
   useEffect(() => {
     load();
   }, [modelId]);
+
+  useRealtimeRefresh(["risk_models", "audit_logs"], load);
 
   // Simplified, disclosed heuristic: stricter node-count / lower window
   // reduces flag volume roughly proportional to the parameter shift.

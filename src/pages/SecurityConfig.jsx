@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useRealtimeRefresh } from "../lib/useRealtimeRefresh";
 import { useAuth } from "../lib/AuthContext";
 import AdminSidebar from "../components/AdminSidebar";
 
@@ -39,6 +40,8 @@ export default function SecurityConfig() {
   useEffect(() => {
     load();
   }, []);
+
+  useRealtimeRefresh(["security_groups", "system_settings"], load);
 
   const handleToggle = async (group, field) => {
     setLoadError("");
