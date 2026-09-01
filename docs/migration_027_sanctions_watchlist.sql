@@ -4,7 +4,12 @@
 -- migration only creates the schema and matching function — it seeds zero
 -- fake entries, since hardcoding invented "sanctioned" names into a
 -- compliance tool would be actively dishonest and potentially legally
--- risky. Real data populates this table only via the real OFAC sync.
+-- risky. Real data populates this table only via the real OFAC sync,
+-- and now also the real UN Consolidated Sanctions List sync
+-- (sync-un-sanctions-list) — see docs/migration_032. The EU list follow-up
+-- (sync-eu-sanctions-list) is built and real, but needs a personal access
+-- token only the deploying user can obtain — see that function's own
+-- setup instructions.
 
 create extension if not exists pg_trgm;
 

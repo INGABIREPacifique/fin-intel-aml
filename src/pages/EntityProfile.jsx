@@ -529,7 +529,7 @@ export default function EntityProfile() {
                 </div>
               )}
               <p className="font-label-caps text-label-caps text-on-surface-variant mt-2">
-                Screens against synced OFAC SDN data (real government source once the sync function has run).
+                Screens against synced OFAC and UN sanctions data (real government/international sources once the sync functions have run).
               </p>
             </div>
           </aside>
