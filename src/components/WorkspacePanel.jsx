@@ -92,14 +92,21 @@ export default function WorkspacePanel({ caseCode, onClose }) {
     };
   }, [caseRecord?.id]);
 
+  const [joinError, setJoinError] = useState("");
+
   const handleJoin = async () => {
     if (!caseRecord) return;
-    await supabase.from("case_task_force").insert({
+    setJoinError("");
+    const { error } = await supabase.from("case_task_force").insert({
       case_id: caseRecord.id,
       member_id: session.user.id,
       agency_label: profile.department,
       role_label: profile.role.replace("_", " "),
     });
+    if (error) {
+      setJoinError(`Couldn't join task force: ${error.message}`);
+      return;
+    }
     load();
   };
 
@@ -254,8 +261,15 @@ export default function WorkspacePanel({ caseCode, onClose }) {
     setInCall(false);
   };
 
+  const [actionItemError, setActionItemError] = useState("");
+
   const toggleActionItem = async (item) => {
-    await supabase.from("case_action_items").update({ done: !item.done }).eq("id", item.id);
+    setActionItemError("");
+    const { error } = await supabase.from("case_action_items").update({ done: !item.done }).eq("id", item.id);
+    if (error) {
+      setActionItemError(`Couldn't update action item: ${error.message}`);
+      return;
+    }
     load();
   };
 
@@ -383,6 +397,9 @@ export default function WorkspacePanel({ caseCode, onClose }) {
       <div className="flex-1 overflow-auto p-5 grid grid-cols-1 lg:grid-cols-4 gap-4">
         <div className="bg-surface-container-low border border-surface-border rounded p-4">
           <h2 className="font-headline-sm text-headline-sm text-data-focus mb-4">Joint Task Force</h2>
+          {joinError && (
+            <p className="font-data-tabular text-data-tabular text-status-critical mb-3">{joinError}</p>
+          )}
           <div className="space-y-3">
             {taskForce.length === 0 && <p className="font-data-tabular text-data-tabular text-on-surface-variant">No members yet.</p>}
             {taskForce.map((t) => (
@@ -508,6 +525,9 @@ export default function WorkspacePanel({ caseCode, onClose }) {
 
           <div className="bg-surface-container-low border border-surface-border rounded p-4">
             <h2 className="font-headline-sm text-headline-sm text-data-focus mb-4">Action Items</h2>
+            {actionItemError && (
+              <p className="font-data-tabular text-data-tabular text-status-critical mb-3">{actionItemError}</p>
+            )}
             <div className="space-y-3">
               {actionItems.map((a) => (
                 <label key={a.id} className="flex items-start gap-2">
