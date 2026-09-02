@@ -34,28 +34,39 @@
 //     "occurred_at": "2026-08-30T14:22:00Z"
 //   }
 //
-// Detection heuristic implemented here (documented honestly — this is a
-// real, working rule, not a placeholder, but it is one specific rule
-// among many a production system would need): rapid pass-through /
-// layering. If an entity matched by name has, within a 48-hour window,
-// received funds and then sent out 85%+ of that amount above a $10,000
-// floor (to avoid flagging trivial transfers), and doesn't already have
-// an open alert for this pattern, a real alert is created automatically
-// with real computed funds_in/funds_out/risk figures — not fabricated —
-// and shows up in the existing Alert Queue and Case Detail screens exactly
-// like any manually-entered alert would.
+// Three real, working detection heuristics run on every ingested
+// transaction — documented honestly: these are genuine rules operating on
+// genuine submitted data, not placeholders, but each is one specific rule
+// among the many a production system would need (sanctions-adjacent
+// counterparties, velocity anomalies, and more are modeled in the Risk
+// Engine Config screen's UI but not yet wired to live data):
 //
-// Known limitation, stated honestly: this is one heuristic. A production
-// system would run many models (structuring, circular flow, sanctions-
-// adjacent counterparties, velocity anomalies, etc.) — the Risk Engine
-// Config screen already models what several of those would look like in
-// the UI, but only this one is actually wired to live incoming data.
+//   1. Rapid pass-through / layering — an entity receives funds and sends
+//      85%+ of them back out within 48 hours (above a $10,000 floor to
+//      avoid flagging trivial transfers).
+//   2. Structuring / smurfing — a sender makes 3+ transactions within 24
+//      hours, each individually under the real $10,000 U.S. Bank Secrecy
+//      Act Currency Transaction Report threshold, summing to $10,000 or
+//      more — the textbook definition of structuring to evade reporting.
+//   3. Circular flow / round-tripping — funds sent from A to B are sent
+//      back from B to A within a 7-day window, a direct two-hop round trip.
+//
+// All three create or update a real alert (and, on first creation, a
+// matching cases row) exactly like a manually-entered one — visible in the
+// existing Alert Queue and Case Detail screens.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const RAPID_PASS_THROUGH_WINDOW_HOURS = 48;
 const RAPID_PASS_THROUGH_MIN_SWEEP_RATIO = 0.85;
 const RAPID_PASS_THROUGH_MIN_AMOUNT = 10000;
+
+const STRUCTURING_WINDOW_HOURS = 24;
+const STRUCTURING_REPORTING_THRESHOLD = 10000; // real US BSA CTR threshold
+const STRUCTURING_MIN_TRANSACTION_COUNT = 3;
+
+const CIRCULAR_FLOW_WINDOW_DAYS = 7;
+const CIRCULAR_FLOW_MIN_AMOUNT = 5000;
 
 // Institution systems calling this server-to-server don't hit browser CORS
 // restrictions, but this is added for consistency and in case any caller
@@ -142,138 +153,92 @@ Deno.serve(async (req) => {
 
   if (insertErr) return jsonResponse({ error: insertErr.message }, 500);
 
-  // Real rapid-pass-through detection — checked against BOTH parties on
-  // this transaction, not just the receiver. A single transaction can be
-  // the inbound leg completing the receiver's pattern, or the outbound leg
-  // completing the sender's pattern (a sender who received funds earlier
-  // and is now sweeping them out is exactly the case this rule exists to
-  // catch), so both names need to be checked, not only one.
-  const receiverResult = await runRapidPassThroughCheck(supabase, payload.receiver_name, insertedTxn.id);
-  const senderResult =
-    payload.sender_name && payload.sender_name !== payload.receiver_name
-      ? await runRapidPassThroughCheck(supabase, payload.sender_name, insertedTxn.id)
-      : { flagged: false, alertId: null };
+  const results = [];
 
-  const flagged = receiverResult.flagged || senderResult.flagged;
-  const alertId = receiverResult.alertId ?? senderResult.alertId ?? null;
+  // Rapid pass-through — checked against BOTH parties on this transaction,
+  // since a single transaction can complete either the receiver's pattern
+  // (inbound leg) or the sender's pattern (outbound sweep leg).
+  results.push(await runRapidPassThroughCheck(supabase, payload.receiver_name, insertedTxn.id));
+  if (payload.sender_name !== payload.receiver_name) {
+    results.push(await runRapidPassThroughCheck(supabase, payload.sender_name, insertedTxn.id));
+  }
+
+  // Structuring — checked against the sender, since structuring is
+  // characterized by the sender's own pattern of small transactions.
+  results.push(await runStructuringCheck(supabase, payload.sender_name, insertedTxn.id));
+
+  // Circular flow — checked as a direct pair between the two parties on
+  // this specific transaction.
+  results.push(await runCircularFlowCheck(supabase, payload.sender_name, payload.receiver_name, insertedTxn.id));
+
+  const flaggedResult = results.find((r) => r.flagged && r.alertId) ?? results.find((r) => r.flagged);
 
   return jsonResponse({
     success: true,
     transaction_id: insertedTxn.id,
-    flagged,
-    alert_id: alertId,
+    flagged: results.some((r) => r.flagged),
+    alert_id: flaggedResult?.alertId ?? null,
+    patterns_checked: results.map((r) => r.pattern),
   });
 });
 
-async function runRapidPassThroughCheck(supabase, entityName, currentTxnId) {
-  const windowStart = new Date(Date.now() - RAPID_PASS_THROUGH_WINDOW_HOURS * 60 * 60 * 1000).toISOString();
-
-  const [{ data: inbound }, { data: outbound }] = await Promise.all([
-    supabase
-      .from("transaction_ingestion_log")
-      .select("amount")
-      .eq("receiver_name", entityName)
-      .gte("occurred_at", windowStart),
-    supabase
-      .from("transaction_ingestion_log")
-      .select("amount")
-      .eq("sender_name", entityName)
-      .gte("occurred_at", windowStart),
-  ]);
-
-  const fundsIn = (inbound ?? []).reduce((sum, r) => sum + Number(r.amount), 0);
-  const fundsOut = (outbound ?? []).reduce((sum, r) => sum + Number(r.amount), 0);
-
-  if (fundsIn < RAPID_PASS_THROUGH_MIN_AMOUNT) return { flagged: false, alertId: null };
-  const sweepRatio = fundsOut / fundsIn;
-  if (sweepRatio < RAPID_PASS_THROUGH_MIN_SWEEP_RATIO) return { flagged: false, alertId: null };
-
-  // Try to match this entity name to an existing real entity record. Never
-  // auto-creates a new entity from unverified webhook text — if there's no
-  // confident match, the transaction is still logged and flagged, but the
-  // alert is skipped until a human can properly resolve the entity.
-  const { data: matchedEntities } = await supabase
-    .from("entities")
-    .select("id, entity_name")
-    .ilike("entity_name", entityName)
-    .limit(1);
-  const entityId = matchedEntities?.[0]?.id ?? null;
-  const matchedEntityName = matchedEntities?.[0]?.entity_name ?? entityName;
-  if (!entityId) return { flagged: true, alertId: null };
-
-  const riskScore = Math.min(99, Math.round(60 + sweepRatio * 35));
-  const narrative = `Automated detection: this entity received $${fundsIn.toLocaleString()} and sent out $${fundsOut.toLocaleString()} (${(sweepRatio * 100).toFixed(1)}% sweep) within a ${RAPID_PASS_THROUGH_WINDOW_HOURS}-hour window across ${(inbound ?? []).length + (outbound ?? []).length} ingested transaction(s), consistent with rapid pass-through / layering behavior.`;
-
+// Shared logic for creating or updating an automated alert — used by all
+// three heuristics below, so the "update existing open alert with fresh
+// totals, or create a new one with its matching cases row" behavior only
+// needs to be correct in one place rather than three separately-maintained
+// copies (a real bug — a missing cases row breaking Assign/Resolve — was
+// already found and fixed once in this exact logic; keeping it shared
+// means that fix now protects all three heuristics, not just one).
+async function createOrUpdateAutomatedAlert(supabase, { entityId, matchedEntityName, pattern, riskScore, volume, windowLabel, fundsIn, fundsOut, narrative, currentTxnId }) {
   const { data: existingOpenAlert } = await supabase
     .from("alerts")
     .select("id")
     .eq("entity_id", entityId)
-    .eq("pattern", "Rapid Pass-Through (Automated Detection)")
+    .eq("pattern", pattern)
     .eq("status", "open")
     .maybeSingle();
 
   if (existingOpenAlert) {
-    // An open alert for this exact pattern already exists — update it with
-    // the latest real totals rather than leaving it frozen at whatever the
-    // figures were when it was first created. An analyst reviewing an
-    // ongoing pattern needs to see current activity, not a stale snapshot.
     const { error: updateErr } = await supabase
       .from("alerts")
-      .update({
-        risk_score: riskScore,
-        volume: fundsIn,
-        funds_in: fundsIn,
-        funds_out: fundsOut,
-        narrative,
-      })
+      .update({ risk_score: riskScore, volume, funds_in: fundsIn ?? null, funds_out: fundsOut ?? null, narrative })
       .eq("id", existingOpenAlert.id);
     if (!updateErr) {
       await supabase.from("transaction_ingestion_log").update({ flagged: true, resulting_alert_id: existingOpenAlert.id }).eq("id", currentTxnId);
     }
-    return { flagged: true, alertId: existingOpenAlert.id };
+    return { flagged: true, alertId: existingOpenAlert.id, pattern };
   }
 
-  const caseCode = `CASE-AUTO-${Date.now().toString().slice(-8)}`;
+  const caseCode = `CASE-AUTO-${Date.now().toString().slice(-8)}-${Math.floor(Math.random() * 900 + 100)}`;
 
   const { data: newAlert, error: alertErr } = await supabase
     .from("alerts")
     .insert({
       entity_id: entityId,
       case_code: caseCode,
-      pattern: "Rapid Pass-Through (Automated Detection)",
+      pattern,
       risk_score: riskScore,
-      volume: fundsIn,
-      window_label: `${RAPID_PASS_THROUGH_WINDOW_HOURS}h`,
+      volume,
+      window_label: windowLabel,
       status: "open",
-      funds_in: fundsIn,
-      funds_out: fundsOut,
+      funds_in: fundsIn ?? null,
+      funds_out: fundsOut ?? null,
       narrative,
     })
     .select()
     .single();
 
-  if (alertErr) return { flagged: true, alertId: null };
+  if (alertErr) return { flagged: true, alertId: null, pattern };
 
-  // Create the matching cases row every automated alert needs — without
-  // this, Case Detail's Assign, False Positive, and Resolve actions all
-  // silently do nothing (they early-return on a missing caseRecord), a
-  // real bug caught during live testing: a manually-created alert (via New
-  // Investigation) always gets a cases row, but this automated path
-  // previously didn't, breaking case management for every detection it
-  // created.
   const caseRiskLevel = riskScore >= 90 ? "critical" : riskScore >= 75 ? "high" : riskScore >= 50 ? "medium" : "low";
   const { error: caseInsertErr } = await supabase.from("cases").insert({
     case_code: caseCode,
-    title: `${matchedEntityName} — Automated Rapid Pass-Through Detection`,
+    title: `${matchedEntityName} — Automated ${pattern.replace(" (Automated Detection)", "")} Detection`,
     entity_id: entityId,
     status: "active",
     risk_level: caseRiskLevel,
   });
   if (caseInsertErr) {
-    // The alert itself was created successfully and is still real and
-    // flagged — a failed case-row insert here is logged but doesn't
-    // change the response, since the alert is still genuinely useful even
-    // if case-management actions on it would be degraded until resolved.
     await supabase.from("audit_logs").insert({
       actor_id: null,
       action: "automated_case_row_creation_failed",
@@ -291,8 +256,123 @@ async function runRapidPassThroughCheck(supabase, entityName, currentTxnId) {
     target_type: "alert",
     target_id: newAlert.id,
     target_label: caseCode,
-    details: { note: "Created by ingest-transaction Edge Function's rapid pass-through heuristic", entity_id: entityId },
+    details: { note: `Created by ingest-transaction Edge Function's ${pattern} heuristic`, entity_id: entityId },
   });
 
-  return { flagged: true, alertId: newAlert.id };
+  return { flagged: true, alertId: newAlert.id, pattern };
+}
+
+// Never auto-creates a new entity from unverified webhook text — if there's
+// no confident match, the caller still logs the flag but skips creating an
+// alert, until a human properly resolves the entity.
+async function matchEntity(supabase, entityName) {
+  const { data } = await supabase.from("entities").select("id, entity_name").ilike("entity_name", entityName).limit(1);
+  return data?.[0] ?? null;
+}
+
+async function runRapidPassThroughCheck(supabase, entityName, currentTxnId) {
+  const pattern = "Rapid Pass-Through (Automated Detection)";
+  const windowStart = new Date(Date.now() - RAPID_PASS_THROUGH_WINDOW_HOURS * 60 * 60 * 1000).toISOString();
+
+  const [{ data: inbound }, { data: outbound }] = await Promise.all([
+    supabase.from("transaction_ingestion_log").select("amount").eq("receiver_name", entityName).gte("occurred_at", windowStart),
+    supabase.from("transaction_ingestion_log").select("amount").eq("sender_name", entityName).gte("occurred_at", windowStart),
+  ]);
+
+  const fundsIn = (inbound ?? []).reduce((sum, r) => sum + Number(r.amount), 0);
+  const fundsOut = (outbound ?? []).reduce((sum, r) => sum + Number(r.amount), 0);
+
+  if (fundsIn < RAPID_PASS_THROUGH_MIN_AMOUNT) return { flagged: false, alertId: null, pattern };
+  const sweepRatio = fundsOut / fundsIn;
+  if (sweepRatio < RAPID_PASS_THROUGH_MIN_SWEEP_RATIO) return { flagged: false, alertId: null, pattern };
+
+  const entity = await matchEntity(supabase, entityName);
+  if (!entity) return { flagged: true, alertId: null, pattern };
+
+  const riskScore = Math.min(99, Math.round(60 + sweepRatio * 35));
+  const narrative = `Automated detection: this entity received $${fundsIn.toLocaleString()} and sent out $${fundsOut.toLocaleString()} (${(sweepRatio * 100).toFixed(1)}% sweep) within a ${RAPID_PASS_THROUGH_WINDOW_HOURS}-hour window across ${(inbound ?? []).length + (outbound ?? []).length} ingested transaction(s), consistent with rapid pass-through / layering behavior.`;
+
+  return createOrUpdateAutomatedAlert(supabase, {
+    entityId: entity.id,
+    matchedEntityName: entity.entity_name,
+    pattern,
+    riskScore,
+    volume: fundsIn,
+    windowLabel: `${RAPID_PASS_THROUGH_WINDOW_HOURS}h`,
+    fundsIn,
+    fundsOut,
+    narrative,
+    currentTxnId,
+  });
+}
+
+async function runStructuringCheck(supabase, entityName, currentTxnId) {
+  const pattern = "Structuring (Automated Detection)";
+  const windowStart = new Date(Date.now() - STRUCTURING_WINDOW_HOURS * 60 * 60 * 1000).toISOString();
+
+  const { data: recentTxns } = await supabase
+    .from("transaction_ingestion_log")
+    .select("amount")
+    .eq("sender_name", entityName)
+    .lt("amount", STRUCTURING_REPORTING_THRESHOLD)
+    .gte("occurred_at", windowStart);
+
+  const count = recentTxns?.length ?? 0;
+  const total = (recentTxns ?? []).reduce((sum, r) => sum + Number(r.amount), 0);
+
+  if (count < STRUCTURING_MIN_TRANSACTION_COUNT) return { flagged: false, alertId: null, pattern };
+  if (total < STRUCTURING_REPORTING_THRESHOLD) return { flagged: false, alertId: null, pattern };
+
+  const entity = await matchEntity(supabase, entityName);
+  if (!entity) return { flagged: true, alertId: null, pattern };
+
+  const riskScore = Math.min(97, Math.round(55 + count * 6));
+  const narrative = `Automated detection: this entity sent ${count} separate transactions within ${STRUCTURING_WINDOW_HOURS} hours, each individually below the $${STRUCTURING_REPORTING_THRESHOLD.toLocaleString()} reporting threshold, totaling $${total.toLocaleString()} — consistent with structuring to evade currency transaction reporting requirements.`;
+
+  return createOrUpdateAutomatedAlert(supabase, {
+    entityId: entity.id,
+    matchedEntityName: entity.entity_name,
+    pattern,
+    riskScore,
+    volume: total,
+    windowLabel: `${STRUCTURING_WINDOW_HOURS}h`,
+    narrative,
+    currentTxnId,
+  });
+}
+
+async function runCircularFlowCheck(supabase, senderName, receiverName, currentTxnId) {
+  const pattern = "Circular Flow (Automated Detection)";
+  if (!senderName || !receiverName || senderName === receiverName) return { flagged: false, alertId: null, pattern };
+
+  const windowStart = new Date(Date.now() - CIRCULAR_FLOW_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data: returnLegs } = await supabase
+    .from("transaction_ingestion_log")
+    .select("amount")
+    .eq("sender_name", receiverName)
+    .eq("receiver_name", senderName)
+    .gte("occurred_at", windowStart);
+
+  if (!returnLegs || returnLegs.length === 0) return { flagged: false, alertId: null, pattern };
+
+  const totalReturned = returnLegs.reduce((sum, r) => sum + Number(r.amount), 0);
+  if (totalReturned < CIRCULAR_FLOW_MIN_AMOUNT) return { flagged: false, alertId: null, pattern };
+
+  const entity = await matchEntity(supabase, senderName);
+  if (!entity) return { flagged: true, alertId: null, pattern };
+
+  const riskScore = 88;
+  const narrative = `Automated detection: funds sent from this entity to ${receiverName} were sent back to this entity within ${CIRCULAR_FLOW_WINDOW_DAYS} days (${returnLegs.length} return transaction(s) totaling $${totalReturned.toLocaleString()}), consistent with circular flow / round-tripping behavior.`;
+
+  return createOrUpdateAutomatedAlert(supabase, {
+    entityId: entity.id,
+    matchedEntityName: entity.entity_name,
+    pattern,
+    riskScore,
+    volume: totalReturned,
+    windowLabel: `${CIRCULAR_FLOW_WINDOW_DAYS}d`,
+    narrative,
+    currentTxnId,
+  });
 }
