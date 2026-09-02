@@ -194,10 +194,11 @@ async function runRapidPassThroughCheck(supabase, entityName, currentTxnId) {
   // alert is skipped until a human can properly resolve the entity.
   const { data: matchedEntities } = await supabase
     .from("entities")
-    .select("id")
+    .select("id, entity_name")
     .ilike("entity_name", entityName)
     .limit(1);
   const entityId = matchedEntities?.[0]?.id ?? null;
+  const matchedEntityName = matchedEntities?.[0]?.entity_name ?? entityName;
   if (!entityId) return { flagged: true, alertId: null };
 
   const riskScore = Math.min(99, Math.round(60 + sweepRatio * 35));
@@ -252,6 +253,36 @@ async function runRapidPassThroughCheck(supabase, entityName, currentTxnId) {
     .single();
 
   if (alertErr) return { flagged: true, alertId: null };
+
+  // Create the matching cases row every automated alert needs — without
+  // this, Case Detail's Assign, False Positive, and Resolve actions all
+  // silently do nothing (they early-return on a missing caseRecord), a
+  // real bug caught during live testing: a manually-created alert (via New
+  // Investigation) always gets a cases row, but this automated path
+  // previously didn't, breaking case management for every detection it
+  // created.
+  const caseRiskLevel = riskScore >= 90 ? "critical" : riskScore >= 75 ? "high" : riskScore >= 50 ? "medium" : "low";
+  const { error: caseInsertErr } = await supabase.from("cases").insert({
+    case_code: caseCode,
+    title: `${matchedEntityName} — Automated Rapid Pass-Through Detection`,
+    entity_id: entityId,
+    status: "active",
+    risk_level: caseRiskLevel,
+  });
+  if (caseInsertErr) {
+    // The alert itself was created successfully and is still real and
+    // flagged — a failed case-row insert here is logged but doesn't
+    // change the response, since the alert is still genuinely useful even
+    // if case-management actions on it would be degraded until resolved.
+    await supabase.from("audit_logs").insert({
+      actor_id: null,
+      action: "automated_case_row_creation_failed",
+      target_type: "alert",
+      target_id: newAlert.id,
+      target_label: caseCode,
+      details: { note: caseInsertErr.message },
+    });
+  }
 
   await supabase.from("transaction_ingestion_log").update({ flagged: true, resulting_alert_id: newAlert.id }).eq("id", currentTxnId);
   await supabase.from("audit_logs").insert({
