@@ -177,11 +177,17 @@ export default function CaseDetail() {
 
   const handleFalsePositive = async () => {
     if (!caseRecord) return;
-    await Promise.all([
+    setActionMessage("");
+    const [alertResult, caseResult] = await Promise.all([
       supabase.from("alerts").update({ status: "closed" }).eq("case_code", caseCode),
       supabase.from("cases").update({ status: "resolved" }).eq("id", caseRecord.id),
     ]);
-    await supabase.from("audit_logs").insert({
+    const writeError = alertResult.error || caseResult.error;
+    if (writeError) {
+      setActionMessage(`Couldn't mark as false positive: ${writeError.message}`);
+      return;
+    }
+    const { error: logErr } = await supabase.from("audit_logs").insert({
       actor_id: session.user.id,
       action: "marked_false_positive",
       target_type: "case",
@@ -189,7 +195,11 @@ export default function CaseDetail() {
       target_label: caseCode,
       details: { note: "Marked as false positive; alert closed, case resolved." },
     });
-    setActionMessage("Marked as false positive. Case resolved.");
+    setActionMessage(
+      logErr
+        ? `Marked as false positive. Case resolved, but the audit log entry failed: ${logErr.message}`
+        : "Marked as false positive. Case resolved."
+    );
     load();
   };
 
