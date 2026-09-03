@@ -28,6 +28,7 @@ export default function EntityProfile() {
   const [sanctionsMatches, setSanctionsMatches] = useState([]);
   const [sanctionsError, setSanctionsError] = useState("");
   const [sanctionsChecked, setSanctionsChecked] = useState(false);
+  const [sanctionsSourceStatus, setSanctionsSourceStatus] = useState([]);
   const [relationships, setRelationships] = useState([]);
   const [neighborEntities, setNeighborEntities] = useState({});
   const [alert, setAlert] = useState(null);
@@ -66,11 +67,12 @@ export default function EntityProfile() {
       // (see migration_027 and the sync-sanctions-list Edge Function) —
       // returns nothing until that table has been synced with real OFAC
       // data, but the screening logic itself is real, not simulated.
-      const { data: sanctionsData, error: sanctionsErr } = await supabase.rpc(
-        "screen_name_against_sanctions",
-        { query_name: entityData.entity_name }
-      );
+      const [{ data: sanctionsData, error: sanctionsErr }, { data: sourceStatusData }] = await Promise.all([
+        supabase.rpc("screen_name_against_sanctions", { query_name: entityData.entity_name }),
+        supabase.rpc("sanctions_source_status"),
+      ]);
       setSanctionsChecked(true);
+      setSanctionsSourceStatus(sourceStatusData ?? []);
       if (sanctionsErr) {
         setSanctionsError(sanctionsErr.message);
       } else {
@@ -528,9 +530,20 @@ export default function EntityProfile() {
                   </p>
                 </div>
               )}
-              <p className="font-label-caps text-label-caps text-on-surface-variant mt-2">
-                Screens against synced OFAC and UN sanctions data (real government/international sources once the sync functions have run).
-              </p>
+              <div className="mt-3 pt-3 border-t border-surface-border space-y-1">
+                {sanctionsSourceStatus.map((s) => (
+                  <p key={s.source} className="font-label-caps text-label-caps text-status-success flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                    {s.source.replace("_", " ")}: {Number(s.record_count).toLocaleString()} records, synced {new Date(s.most_recent_sync).toLocaleDateString()}
+                  </p>
+                ))}
+                {sanctionsChecked && !sanctionsSourceStatus.some((s) => s.source === "EU_CONSOLIDATED") && (
+                  <p className="font-label-caps text-label-caps text-status-warning flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[14px]">pending</span>
+                    EU CONSOLIDATED: not yet configured (requires an EU portal access token)
+                  </p>
+                )}
+              </div>
             </div>
           </aside>
         </main>
