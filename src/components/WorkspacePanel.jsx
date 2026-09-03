@@ -28,6 +28,7 @@ export default function WorkspacePanel({ caseCode, onClose }) {
   const [milestones, setMilestones] = useState([]);
   const [actionItems, setActionItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   const [noteText, setNoteText] = useState("");
   const [posting, setPosting] = useState(false);
@@ -39,22 +40,42 @@ export default function WorkspacePanel({ caseCode, onClose }) {
   const chunksRef = useRef([]);
 
   const load = async () => {
-    const { data: caseData } = await supabase.from("cases").select("*, entities(entity_name)").eq("case_code", caseCode).maybeSingle();
+    setLoadError("");
+    const { data: caseData, error: caseErr } = await supabase
+      .from("cases")
+      .select("*, entities(entity_name)")
+      .eq("case_code", caseCode)
+      .maybeSingle();
+    if (caseErr) {
+      setLoadError(caseErr.message);
+      setLoading(false);
+      return;
+    }
     if (!caseData) {
       setLoading(false);
       return;
     }
     setCaseRecord(caseData);
-    const [{ data: tf }, { data: log }, { data: ms }, { data: ai }] = await Promise.all([
+    const [
+      { data: tf, error: tfErr },
+      { data: log, error: logErr },
+      { data: ms, error: msErr },
+      { data: ai, error: aiErr },
+    ] = await Promise.all([
       supabase.from("case_task_force").select("*, profiles(full_name)").eq("case_id", caseData.id),
       supabase.from("case_evidence_log").select("*, profiles(full_name)").eq("case_id", caseData.id).order("created_at", { ascending: true }),
       supabase.from("case_milestones").select("*").eq("case_id", caseData.id).order("sort_order"),
       supabase.from("case_action_items").select("*, profiles(full_name)").eq("case_id", caseData.id).order("created_at"),
     ]);
-    setTaskForce(tf ?? []);
-    setEvidenceLog(log ?? []);
-    setMilestones(ms ?? []);
-    setActionItems(ai ?? []);
+    const secondaryError = tfErr || logErr || msErr || aiErr;
+    if (secondaryError) {
+      setLoadError(secondaryError.message);
+    } else {
+      setTaskForce(tf ?? []);
+      setEvidenceLog(log ?? []);
+      setMilestones(ms ?? []);
+      setActionItems(ai ?? []);
+    }
     setLoading(false);
   };
 
@@ -316,6 +337,9 @@ export default function WorkspacePanel({ caseCode, onClose }) {
   if (loading) {
     return <div className="p-8 font-data-tabular text-data-tabular text-on-surface-variant">Loading workspace...</div>;
   }
+  if (loadError && !caseRecord) {
+    return <div className="p-8 font-data-tabular text-data-tabular text-status-critical">Couldn't load workspace: {loadError}</div>;
+  }
   if (!caseRecord) {
     return <div className="p-8 font-data-tabular text-data-tabular text-status-critical">Case not found.</div>;
   }
@@ -366,6 +390,11 @@ export default function WorkspacePanel({ caseCode, onClose }) {
         </div>
       )}
     <div className="flex flex-col h-full bg-surface-container">
+      {loadError && (
+        <p className="font-data-tabular text-data-tabular text-status-critical bg-status-critical/10 px-5 py-2 border-b border-status-critical">
+          Some workspace data couldn't load: {loadError}
+        </p>
+      )}
       <div className="flex items-center justify-between p-5 border-b border-surface-border shrink-0">
         <div>
           <div className="flex items-center gap-2 mb-1">

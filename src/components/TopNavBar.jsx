@@ -20,6 +20,7 @@ export default function TopNavBar() {
   const [searching, setSearching] = useState(false);
   const [entityResults, setEntityResults] = useState([]);
   const [caseResults, setCaseResults] = useState([]);
+  const [searchError, setSearchError] = useState("");
   const searchRef = useRef(null);
 
   useEffect(() => {
@@ -39,12 +40,20 @@ export default function TopNavBar() {
     }
     const timeout = setTimeout(async () => {
       setSearching(true);
-      const [{ data: entities }, { data: cases }] = await Promise.all([
+      setSearchError("");
+      const [{ data: entities, error: entityErr }, { data: cases, error: caseErr }] = await Promise.all([
         supabase.from("entities").select("id, entity_name, entity_type").ilike("entity_name", `%${query}%`).limit(5),
         supabase.from("cases").select("case_code, title").or(`title.ilike.%${query}%,case_code.ilike.%${query}%`).limit(5),
       ]);
-      setEntityResults(entities ?? []);
-      setCaseResults(cases ?? []);
+      const firstError = entityErr || caseErr;
+      if (firstError) {
+        setSearchError(firstError.message);
+        setEntityResults([]);
+        setCaseResults([]);
+      } else {
+        setEntityResults(entities ?? []);
+        setCaseResults(cases ?? []);
+      }
       setSearching(false);
     }, 300);
     return () => clearTimeout(timeout);
@@ -106,7 +115,10 @@ export default function TopNavBar() {
             {searching && (
               <p className="p-3 font-data-tabular text-data-tabular text-on-surface-variant">Searching...</p>
             )}
-            {!searching && entityResults.length === 0 && caseResults.length === 0 && (
+            {!searching && searchError && (
+              <p className="p-3 font-data-tabular text-data-tabular text-status-critical">Search failed: {searchError}</p>
+            )}
+            {!searching && !searchError && entityResults.length === 0 && caseResults.length === 0 && (
               <p className="p-3 font-data-tabular text-data-tabular text-on-surface-variant">No results.</p>
             )}
             {entityResults.length > 0 && (

@@ -23,14 +23,24 @@ export default function JurisdictionMap({ jurisdictionRisk }) {
   const [coords, setCoords] = useState([]);
   const [links, setLinks] = useState([]);
   const [hovered, setHovered] = useState(null);
+  const [mapError, setMapError] = useState("");
 
   useEffect(() => {
     async function load() {
-      const [{ data: coordData }, { data: relData }, { data: entityData }] = await Promise.all([
+      const [
+        { data: coordData, error: coordErr },
+        { data: relData, error: relErr },
+        { data: entityData, error: entityErr },
+      ] = await Promise.all([
         supabase.from("jurisdiction_coordinates").select("*"),
         supabase.from("entity_relationships").select("*"),
         supabase.from("entities").select("id, jurisdiction"),
       ]);
+      const firstError = coordErr || relErr || entityErr;
+      if (firstError) {
+        setMapError(firstError.message);
+        return;
+      }
       setCoords(coordData ?? []);
       const jurisdictionByEntity = Object.fromEntries(
         (entityData ?? []).map((e) => [e.id, normalizeJurisdiction(e.jurisdiction)])
@@ -70,6 +80,11 @@ export default function JurisdictionMap({ jurisdictionRisk }) {
 
   return (
     <div className="relative rounded-lg overflow-hidden" style={{ background: "radial-gradient(ellipse at center, #10203f 0%, #060b1a 100%)" }}>
+      {mapError && (
+        <p className="absolute top-2 left-2 z-10 font-data-tabular text-data-tabular text-status-critical bg-black/60 px-2 py-1 rounded">
+          Couldn't load map data: {mapError}
+        </p>
+      )}
       <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto">
         <defs>
           <filter id="glow" x="-100%" y="-100%" width="300%" height="300%">
