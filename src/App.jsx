@@ -1,36 +1,54 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Suspense, lazy } from "react";
 import { AuthProvider } from "./lib/AuthContext";
 import { ThemeProvider } from "./lib/ThemeContext";
 import { MobileNavProvider } from "./lib/MobileNavContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
-import ResetPassword from "./pages/ResetPassword";
 import IdleWarningBanner from "./components/IdleWarningBanner";
-import BiometricVerification from "./pages/BiometricVerification";
-import Dashboard from "./pages/Dashboard";
-import CaseDetail from "./pages/CaseDetail";
-import SarFiling from "./pages/SarFiling";
-import AlertQueue from "./pages/AlertQueue";
-import InstitutionsList from "./pages/InstitutionsList";
-import InstitutionProfile from "./pages/InstitutionProfile";
-import GlobalAuditTrail from "./pages/GlobalAuditTrail";
-import RiskEngineConfig from "./pages/RiskEngineConfig";
-import NewInvestigation from "./pages/NewInvestigation";
-import Investigations from "./pages/Investigations";
-import DataHealth from "./pages/DataHealth";
-import SecurityConfig from "./pages/SecurityConfig";
-import AccessPermissions from "./pages/AccessPermissions";
-import ApiGateway from "./pages/ApiGateway";
-import InstitutionOnboarding from "./pages/InstitutionOnboarding";
-import NetworkAnalysis from "./pages/NetworkAnalysis";
-import EntitySearch from "./pages/EntitySearch";
-import EntityProfile from "./pages/EntityProfile";
-import GraphExplorer from "./pages/GraphExplorer";
-import RiskModelDetail from "./pages/RiskModelDetail";
-import CaseWorkspace from "./pages/CaseWorkspace";
-import Settings from "./pages/Settings";
-import MobileFieldHub from "./pages/MobileFieldHub";
-import MobileAlertDetail from "./pages/MobileAlertDetail";
+
+// Every other page is lazy-loaded (route-based code splitting) so a user
+// only downloads the JS for the screens they actually visit, instead of
+// one ~800kB bundle containing every page in the app up front — this
+// matters in practice, not just as a best-practice checkbox, given the
+// platform's stated focus on markets where mobile data can be slow or
+// costly. Login stays eagerly loaded since it's the very first thing an
+// unauthenticated user sees; lazy-loading it would add an extra network
+// round-trip before they could even see the login form.
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const BiometricVerification = lazy(() => import("./pages/BiometricVerification"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const CaseDetail = lazy(() => import("./pages/CaseDetail"));
+const SarFiling = lazy(() => import("./pages/SarFiling"));
+const AlertQueue = lazy(() => import("./pages/AlertQueue"));
+const InstitutionsList = lazy(() => import("./pages/InstitutionsList"));
+const InstitutionProfile = lazy(() => import("./pages/InstitutionProfile"));
+const GlobalAuditTrail = lazy(() => import("./pages/GlobalAuditTrail"));
+const RiskEngineConfig = lazy(() => import("./pages/RiskEngineConfig"));
+const NewInvestigation = lazy(() => import("./pages/NewInvestigation"));
+const Investigations = lazy(() => import("./pages/Investigations"));
+const DataHealth = lazy(() => import("./pages/DataHealth"));
+const SecurityConfig = lazy(() => import("./pages/SecurityConfig"));
+const AccessPermissions = lazy(() => import("./pages/AccessPermissions"));
+const ApiGateway = lazy(() => import("./pages/ApiGateway"));
+const InstitutionOnboarding = lazy(() => import("./pages/InstitutionOnboarding"));
+const NetworkAnalysis = lazy(() => import("./pages/NetworkAnalysis"));
+const EntitySearch = lazy(() => import("./pages/EntitySearch"));
+const EntityProfile = lazy(() => import("./pages/EntityProfile"));
+const GraphExplorer = lazy(() => import("./pages/GraphExplorer"));
+const RiskModelDetail = lazy(() => import("./pages/RiskModelDetail"));
+const CaseWorkspace = lazy(() => import("./pages/CaseWorkspace"));
+const Settings = lazy(() => import("./pages/Settings"));
+const MobileFieldHub = lazy(() => import("./pages/MobileFieldHub"));
+const MobileAlertDetail = lazy(() => import("./pages/MobileAlertDetail"));
+
+function RouteLoadingFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background text-on-surface-variant font-data-tabular text-data-tabular">
+      Loading...
+    </div>
+  );
+}
 
 const ALL_ROLES = ["investigator", "compliance_officer", "admin"];
 const OFFICER_AND_ADMIN = ["compliance_officer", "admin"];
@@ -43,6 +61,7 @@ export default function App() {
     <MobileNavProvider>
       <IdleWarningBanner />
       <BrowserRouter>
+        <Suspense fallback={<RouteLoadingFallback />}>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/login" element={<Login />} />
@@ -260,6 +279,7 @@ export default function App() {
             }
           />
         </Routes>
+        </Suspense>
       </BrowserRouter>
     </MobileNavProvider>
     </AuthProvider>
