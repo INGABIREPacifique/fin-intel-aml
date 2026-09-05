@@ -88,7 +88,7 @@ export default function TopNavBar() {
   return (
     <header className="bg-background border-b border-surface-border h-16 flex items-center justify-between px-4 md:px-8 shrink-0">
       <div className="flex items-center gap-3">
-        <button onClick={toggle} className="md:hidden p-2 -ml-2 rounded hover:bg-surface-container-high">
+        <button onClick={toggle} aria-label="Open navigation menu" className="md:hidden p-2 -ml-2 rounded hover:bg-surface-container-high">
           <span className="material-symbols-outlined text-on-surface text-[22px]">menu</span>
         </button>
         <h1 className="hidden sm:block font-body-lg text-body-lg font-bold text-on-surface">FIN-INTELLIGENCE</h1>
@@ -157,6 +157,7 @@ export default function TopNavBar() {
       <div className="flex items-center gap-4">
         <button
           onClick={toggleTheme}
+          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
           className="p-2 rounded-full hover:bg-surface-container-high transition-colors"
           title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
         >
@@ -167,6 +168,8 @@ export default function TopNavBar() {
         <div className="flex items-center gap-2 relative" ref={ref}>
           <button
             onClick={toggleOpen}
+            aria-label="Notifications"
+            aria-expanded={open}
             className="p-2 rounded-full hover:bg-surface-container-high transition-colors"
           >
             <span className="material-symbols-outlined text-on-surface-variant text-[20px]">notifications</span>
@@ -200,6 +203,7 @@ export default function TopNavBar() {
         {profile && (
           <button
             onClick={() => navigate("/settings")}
+            aria-label={`Account settings for ${profile.full_name}`}
             className="w-8 h-8 rounded-full bg-surface-container-high border border-surface-border flex items-center justify-center"
             title={`${profile.full_name} — ${profile.role.replace("_", " ")}`}
           >

@@ -308,6 +308,8 @@ export default function VideoCallRoom({ caseCode, session, profile, onClose, sta
       <div className="flex items-center justify-center gap-4 py-6 border-t border-surface-border">
         <button
           onClick={toggleMic}
+          aria-label={micOn ? "Mute microphone" : "Unmute microphone"}
+          aria-pressed={!micOn}
           className={`w-12 h-12 rounded-full flex items-center justify-center ${
             micOn ? "bg-surface-container text-on-surface" : "bg-status-critical text-white"
           }`}
@@ -316,6 +318,8 @@ export default function VideoCallRoom({ caseCode, session, profile, onClose, sta
         </button>
         <button
           onClick={toggleCam}
+          aria-label={camOn ? "Turn off camera" : "Turn on camera"}
+          aria-pressed={!camOn}
           className={`w-12 h-12 rounded-full flex items-center justify-center ${
             camOn ? "bg-surface-container text-on-surface" : "bg-status-critical text-white"
           }`}

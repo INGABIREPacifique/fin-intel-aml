@@ -416,7 +416,7 @@ export default function WorkspacePanel({ caseCode, onClose }) {
             </button>
           )}
           {onClose && (
-            <button onClick={onClose} className="p-2 text-on-surface-variant hover:text-on-surface">
+            <button onClick={onClose} aria-label="Close workspace" className="p-2 text-on-surface-variant hover:text-on-surface">
               <span className="material-symbols-outlined">close</span>
             </button>
           )}
@@ -496,11 +496,13 @@ export default function WorkspacePanel({ caseCode, onClose }) {
             {uploading && <p className="font-data-tabular text-data-tabular text-secondary mb-2">Uploading...</p>}
             <div className="flex items-center gap-1 mb-2">
               <input ref={fileInputRef} type="file" onChange={handleFileChange} className="hidden" />
-              <button onClick={() => fileInputRef.current?.click()} className="p-1.5 rounded hover:bg-surface-container-high transition-colors" title="Attach document or image">
+              <button onClick={() => fileInputRef.current?.click()} aria-label="Attach document or image" className="p-1.5 rounded hover:bg-surface-container-high transition-colors" title="Attach document or image">
                 <span className="material-symbols-outlined text-on-surface-variant text-[18px]">attach_file</span>
               </button>
               <button
                 onClick={recording ? stopRecording : startRecording}
+                aria-label={recording ? "Stop recording" : "Record voice note"}
+                aria-pressed={recording}
                 className={`p-1.5 rounded transition-colors ${recording ? "bg-status-critical/20 text-status-critical" : "hover:bg-surface-container-high text-on-surface-variant"}`}
                 title={recording ? "Stop recording" : "Record voice note"}
               >
